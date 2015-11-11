@@ -9,25 +9,26 @@ import com.bentonow.drive.Application;
 import com.bentonow.drive.listener.InterfaceWebRequest;
 import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.util.DebugUtils;
+import com.bentonow.drive.web.BentoDriveAPI;
 
 import java.util.HashMap;
 
 /**
  * Created by Jose Torres on 11/10/15.
  */
-public class RequestLogIn implements InterfaceWebRequest {
+public class RequestGetAssignedOrders implements InterfaceWebRequest {
 
-    public static final String TAG = "RequestLogIn";
+    public static final String TAG = "RequestGetAssignedOrders";
     private ListenerWebRequest mListener;
 
-    public RequestLogIn(ListenerWebRequest mListener) {
+    public RequestGetAssignedOrders(ListenerWebRequest mListener) {
         this.mListener = mListener;
     }
 
     @Override
     public void dispatchRequest() {
 
-        Request request = new Request(Request.Method.GET, "Url", getErrorListener()) {
+        Request request = new Request(Request.Method.GET, BentoDriveAPI.getAsignedOrdersUrl(), getErrorListener()) {
 
             @Override
             public int compareTo(Object another) {
@@ -47,7 +48,7 @@ public class RequestLogIn implements InterfaceWebRequest {
                 try {
                     jsonString = new String(networkResponse.data, HttpHeaderParser.parseCharset(networkResponse.headers));
 
-                    //DebugUtils.logDebug(TAG, "Response: " + jsonString);
+                    DebugUtils.logDebug(TAG, "Response: " + jsonString);
                     DebugUtils.logDebug(TAG, "Headers: " + networkResponse.headers);
                     DebugUtils.logDebug(TAG, "Time: " + networkResponse.networkTimeMs);
                     DebugUtils.logDebug(TAG, "Code: " + networkResponse.statusCode);
@@ -55,7 +56,7 @@ public class RequestLogIn implements InterfaceWebRequest {
                     //FortuneCookieSugarOrm.insertFortuneCookie(mFortune);
 
                     if (mListener != null)
-                        mListener.onResponse(null);
+                        mListener.onResponse(jsonString);
                 } catch (Exception ex) {
                     DebugUtils.logError(TAG, ex);
                     if (mListener != null)

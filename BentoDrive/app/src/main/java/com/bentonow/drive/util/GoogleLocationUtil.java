@@ -77,8 +77,7 @@ public class GoogleLocationUtil {
     public static LocationRequest getLocationRequest() {
         if (mLocationRequest == null) {
             mLocationRequest = new LocationRequest();
-            mLocationRequest.setInterval(10000);
-            mLocationRequest.setNumUpdates(1);
+            mLocationRequest.setInterval(100000);
             mLocationRequest.setFastestInterval(5000);
             mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         }

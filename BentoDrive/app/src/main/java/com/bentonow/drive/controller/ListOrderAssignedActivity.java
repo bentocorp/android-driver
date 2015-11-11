@@ -5,24 +5,26 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.os.IBinder;
-import android.widget.TextView;
+import android.view.View;
+import android.widget.ImageView;
 
+import com.bentonow.drive.Application;
 import com.bentonow.drive.R;
+import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.socket.WebSocketService;
-import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
+import com.bentonow.drive.web.request.RequestGetAssignedOrders;
 
 /**
  * Created by Jose Torres on 11/10/15.
  */
-public class SplashActivity extends MainActivity {
+public class ListOrderAssignedActivity extends MainActivity implements View.OnClickListener {
 
-    public static final String TAG = "SplashActivity";
+    public static final String TAG = "ListOrderAssignedActivity";
 
-    private TextView txtAppVersion;
+    private ImageView imgMenuItemLogOut;
 
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
@@ -32,27 +34,28 @@ public class SplashActivity extends MainActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_splash);
+        setContentView(R.layout.activity_list_bento);
 
-        getTxtAppVersion().setText(AndroidUtil.getVersionName());
+        getMenuItemLogOut().setOnClickListener(this);
 
-        new CountDownTimer(2 * 600, 1000) {
-
+        Application.getInstance().webRequest(new RequestGetAssignedOrders(new ListenerWebRequest() {
             @Override
-            public void onTick(long millisUntilFinished) {
+            public void onError(String sError) {
+                super.onError(sError);
             }
 
             @Override
-            public void onFinish() {
-                if (BentoDriveUtil.isUserConnected()) {
-                    BentoDriveUtil.openListBentoActivity(SplashActivity.this);
-                } else {
-                    BentoDriveUtil.openLogInActivity(SplashActivity.this);
-                }
+            public void onResponse(Object oResponse) {
+                super.onResponse(oResponse);
             }
-        }.start();
+
+            @Override
+            public void onComplete() {
+                super.onComplete();
+            }
+        }));
+
     }
-
 
     private class WebSocketServiceConnection implements ServiceConnection {
         @Override
@@ -70,6 +73,18 @@ public class SplashActivity extends MainActivity {
         }
     }
 
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.img_menu_item_log_out:
+                webSocketService.disconnectWebSocket();
+                BentoDriveUtil.disconnectUser(ListOrderAssignedActivity.this);
+                break;
+            default:
+                DebugUtils.logError(TAG, "OnClick(): " + v.getId());
+                break;
+        }
+    }
 
     @Override
     protected void onStart() {
@@ -81,18 +96,16 @@ public class SplashActivity extends MainActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        // Unbind from the service
         if (mBound) {
             unbindService(mConnection);
             mBound = false;
         }
     }
 
-    private TextView getTxtAppVersion() {
-        if (txtAppVersion == null)
-            txtAppVersion = (TextView) findViewById(R.id.txt_app_version);
-        return txtAppVersion;
+    private ImageView getMenuItemLogOut() {
+        if (imgMenuItemLogOut == null)
+            imgMenuItemLogOut = (ImageView) findViewById(R.id.img_menu_item_log_out);
+        return imgMenuItemLogOut;
     }
-
 
 }

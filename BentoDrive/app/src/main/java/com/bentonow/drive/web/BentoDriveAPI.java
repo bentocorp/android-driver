@@ -10,8 +10,10 @@ import com.bentonow.drive.util.SharedPreferencesUtil;
 public class BentoDriveAPI {
 
     public final static String NODE_URL = Application.getInstance().getString(R.string.node_url);
+    public final static String HOUSTON_URL = Application.getInstance().getString(R.string.houston_url);
     public final static String URL_AUTHENTICATION = "/api/authenticate?username=%s&password=%s&type=driver";
     public final static String URL_SEND_LOCATION = "/api/uloc?token=%s&lat=%s&lng=%s";
+    public final static String URL_GET_ORDERS = "/api/order/getAllAssigned?token=";
 
     public static String getAuthenticationUrl(String sUsername, String sPassword) {
         return String.format(URL_AUTHENTICATION, sUsername, sPassword);
@@ -19,6 +21,10 @@ public class BentoDriveAPI {
 
     public static String getSendLocationUrl(double dLatitude, double dLongitude) {
         return String.format(URL_SEND_LOCATION, SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.TOKEN), dLatitude, dLongitude);
+    }
+
+    public static String getAsignedOrdersUrl() {
+        return HOUSTON_URL + URL_GET_ORDERS + SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.TOKEN);
     }
 
 }

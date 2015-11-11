@@ -51,13 +51,18 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
             boolean bIsConnected = webSocketService.isConnectedUser();
             if (!bIsConnected) {
                 DebugUtils.logDebug(TAG, "Attempting to connect to node");
+
                 webSocketService.connectWebSocket(getEditUsername().getText().toString(), getEditPassword().getText().toString(), new WebSocketEventListener() {
                     @Override
                     public void onAuthenticationSuccess(String sToken) {
-                        SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.TOKEN, sToken);
+                        SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
+                        SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
                         DebugUtils.logDebug(TAG, "Token: " + sToken);
+
+                        BentoDriveUtil.openListBentoActivity(LogInActivity.this);
                     }
                 });
+
             } else {
                 webSocketService.disconnectWebSocket();
 
@@ -65,9 +70,6 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
         }
     }
 
-    /**
-     * Defines callbacks for service binding, passed to bindService()
-     */
     private class WebSocketServiceConnection implements ServiceConnection {
         @Override
         public void onServiceConnected(ComponentName name, IBinder binder) {

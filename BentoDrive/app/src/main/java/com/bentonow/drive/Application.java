@@ -6,6 +6,7 @@ package com.bentonow.drive;
 
 import android.content.res.Configuration;
 import android.os.Handler;
+import android.os.Looper;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
@@ -16,7 +17,7 @@ import com.bentonow.drive.util.DebugUtils;
 public class Application extends android.app.Application {
 
     private static Application singleton;
-    public Handler mHandler = new Handler();
+    public Handler mHandler = new Handler(Looper.getMainLooper());
     private Thread mThread;
     private RequestQueue mRequestQueue;
 

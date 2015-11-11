@@ -6,10 +6,14 @@ import android.location.Location;
 import android.os.Binder;
 import android.os.IBinder;
 
+import com.bentonow.drive.Application;
 import com.bentonow.drive.listener.UpdateLocationListener;
 import com.bentonow.drive.listener.WebSocketEventListener;
+import com.bentonow.drive.model.SocketResponseModel;
+import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.GoogleLocationUtil;
+import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.web.BentoDriveAPI;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,15 +34,21 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     private final WebSocketServiceBinder binder = new WebSocketServiceBinder();
     private ObjectMapper mapper = new ObjectMapper();
     private Socket mSocket = null;
-
     private boolean connecting = false;
     private boolean disconnectingPurposefully = false;
-    private String token;
 
 
     @Override
     public void onCreate() {
         DebugUtils.logDebug(TAG, "creating new WebSocketService");
+        if (BentoDriveUtil.isUserConnected() && !isConnectedUser()) {
+            connectWebSocket(SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.USER_NAME), SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.PASSWORD), new WebSocketEventListener() {
+                @Override
+                public void onAuthenticationFailure(String reason) {
+                    BentoDriveUtil.disconnectUser(WebSocketService.this);
+                }
+            });
+        }
     }
 
 
@@ -59,7 +69,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 mSocket.connect();
             } catch (Exception e) {
                 DebugUtils.logError(TAG, "connectWebSocket: " + e.toString());
-                mListener.onConnectionError(e.getMessage());
+                if (mListener != null)
+                    mListener.onConnectionError(e.getMessage());
             }
         }
     }
@@ -73,7 +84,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 try {
                     String sPath = BentoDriveAPI.getAuthenticationUrl(sUsername, sPassword);
                     DebugUtils.logDebug(TAG, "Connecting: " + sPath);
-                    //socket.emit("get", URLEncoder.encode(path, "UTF-8"), new Ack() {
                     mSocket.emit("get", sPath, new Ack() {
                         @Override
                         public void call(Object[] args) {
@@ -85,9 +95,15 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                     DebugUtils.logError(TAG, "socketAuthenticate: " + res.msg);
                                     mSocket.disconnect();
                                 } else {
-                                    token = res.ret.token;
-                                    GoogleLocationUtil.startLocationUpdates(WebSocketService.this);
-                                    mListener.onAuthenticationSuccess(token);
+                                    final String sToken = res.ret.token;
+                                    mListener.onAuthenticationSuccess(sToken);
+                                    SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.TOKEN, sToken);
+                                    Application.getInstance().handlerPost(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            GoogleLocationUtil.startLocationUpdates(WebSocketService.this);
+                                        }
+                                    });
                                 }
                             } catch (Exception e) {
                                 mListener.onAuthenticationFailure(e.getMessage());
@@ -97,8 +113,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                         }
                     });
                 } catch (Exception e) {
-                    //} catch (UnsupportedEncodingException e) {
-                    mListener.onAuthenticationFailure(e.getMessage());
+                    mListener.onConnectionError(e.getMessage());
                     DebugUtils.logError(TAG, "disconnecting-onemittig");
                     mSocket.disconnect();
                 }
@@ -145,7 +160,9 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     public void disconnectWebSocket() {
         disconnectingPurposefully = true;
         DebugUtils.logDebug(TAG, "disconnecting");
-        mSocket.disconnect();
+        if (mSocket != null)
+            mSocket.disconnect();
+        GoogleLocationUtil.stopLocationUpdates();
     }
 
 
@@ -164,14 +181,12 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 @Override
                 public void call(Object[] args) {
                     try {
-                        APIResponse<Authenticate> res = mapper.readValue(args[0].toString(), new TypeReference<APIResponse<Authenticate>>() {
-                        });
-                        if (res.code != 0) {
-                            DebugUtils.logError(TAG, "onLocationUpdated: " + res.msg);
+                        SocketResponseModel mResponse = new ObjectMapper().readValue(args[0].toString(), SocketResponseModel.class);
+                        if (mResponse.getCode() != 0) {
+                            DebugUtils.logError(TAG, "onLocationUpdated: " + mResponse.getMsg());
                         } else {
-                            token = res.ret.token;
-                            DebugUtils.logDebug(TAG, "onLocationUpdated: " + res.ret);
-                            GoogleLocationUtil.startLocationUpdates(WebSocketService.this);
+                            String sResponse = mResponse.getRet();
+                            DebugUtils.logDebug(TAG, "onLocationUpdated: " + sResponse);
                         }
                     } catch (Exception e) {
                         DebugUtils.logError(TAG, "onLocationUpdated: " + e.toString());
@@ -194,6 +209,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     @Override
     public void onDestroy() {
         DebugUtils.logDebug(TAG, "destroying WebSocketService");
+        disconnectWebSocket();
     }
 
     // Called when all clients have disconnected
