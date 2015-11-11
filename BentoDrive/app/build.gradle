@@ -1,0 +1,54 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.1"
+
+    defaultConfig {
+        applicationId "com.bentonow.drive"
+        minSdkVersion 14
+        targetSdkVersion 22
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            debuggable false
+            proguardFiles getDefaultProguardFile('proguard-android.main_title'), 'proguard-rules.pro'
+        }
+    }
+
+    productFlavors {
+        production {
+            applicationId "com.bentonow.drive"
+            versionName '1.1-rc1'
+        }
+        stage {
+            applicationId "com.bentonow.drive.stage"
+            versionName '1.1-rc1-dev'
+        }
+    }
+
+
+    packagingOptions {
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:23.1.0'
+    compile 'com.google.android.gms:play-services-location:8.3.0'
+    compile 'com.nineoldandroids:library:2.4.0'
+    compile 'com.mcxiaoke.volley:library:1.0.19'
+    compile 'com.github.nkzawa:socket.io-client:0.6.0'
+
+    compile (
+            [group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.4.1'],
+            [group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.4.1'],
+            [group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.4.1']
+    )
+}
