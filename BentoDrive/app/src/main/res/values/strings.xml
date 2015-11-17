@@ -1,2 +1,4 @@
 <resources>
+
+    <string name="order_sms_message">Hi Message</string>
 </resources>

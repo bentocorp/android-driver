@@ -8,6 +8,8 @@ import com.android.volley.toolbox.HttpHeaderParser;
 import com.bentonow.drive.Application;
 import com.bentonow.drive.listener.InterfaceWebRequest;
 import com.bentonow.drive.listener.ListenerWebRequest;
+import com.bentonow.drive.model.OrderItemModel;
+import com.bentonow.drive.parse.jackson.BentoOrderJsonParser;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.web.BentoDriveAPI;
 
@@ -53,10 +55,18 @@ public class RequestGetAssignedOrders implements InterfaceWebRequest {
                     DebugUtils.logDebug(TAG, "Time: " + networkResponse.networkTimeMs);
                     DebugUtils.logDebug(TAG, "Code: " + networkResponse.statusCode);
                     DebugUtils.logDebug(TAG, "Modified: " + networkResponse.notModified);
-                    //FortuneCookieSugarOrm.insertFortuneCookie(mFortune);
+
+                    OrderItemModel mOrderModel;
+                    try {
+
+                        mOrderModel = BentoOrderJsonParser.parseBentoListOrder(jsonString);
+                    } catch (Exception ex) {
+                        DebugUtils.logError(TAG, ex);
+                        mOrderModel = BentoOrderJsonParser.parseBentoTask(jsonString);
+                    }
 
                     if (mListener != null)
-                        mListener.onResponse(jsonString);
+                        mListener.onResponse(mOrderModel);
                 } catch (Exception ex) {
                     DebugUtils.logError(TAG, ex);
                     if (mListener != null)

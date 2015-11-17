@@ -246,7 +246,7 @@ public class AndroidUtil {
         Intent intent = new Intent(Intent.ACTION_CALL);
         intent.setData(Uri.parse("tel:" + phone));
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        //context.startActivity(intent);
+        context.startActivity(intent);
     }
 
 
@@ -326,11 +326,21 @@ public class AndroidUtil {
         }
     }
 
-    public static void sendSms(Context mContext, String sPhone, String sMessage, String sUri) {
+    public static void sendMsms(Context mContext, String sPhone, String sMessage, String sUri) {
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.putExtra("sms_body", sMessage);
         intent.putExtra(Intent.EXTRA_STREAM, Uri.parse(sUri));
         intent.setType("image/jpeg");
+        try {
+            mContext.startActivity(Intent.createChooser(intent, "Send"));
+        } catch (Exception e) {
+            DebugUtils.logError("PopulateSms", e);
+        }
+    }
+
+    public static void sendSms(Context mContext, String sPhone, String sMessage) {
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.putExtra("sms_body", sMessage);
         try {
             mContext.startActivity(Intent.createChooser(intent, "Send"));
         } catch (Exception e) {

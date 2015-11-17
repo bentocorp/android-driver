@@ -6,6 +6,7 @@ import android.support.v4.app.FragmentActivity;
 
 import com.bentonow.drive.controller.ListOrderAssignedActivity;
 import com.bentonow.drive.controller.LogInActivity;
+import com.bentonow.drive.controller.OrderAssignedActivity;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -16,6 +17,12 @@ public class BentoDriveUtil {
 
     public static void openListBentoActivity(FragmentActivity mContext) {
         Intent intent = new Intent(mContext, ListOrderAssignedActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        mContext.startActivity(intent);
+    }
+
+    public static void openBentoOrderActivity(FragmentActivity mContext) {
+        Intent intent = new Intent(mContext, OrderAssignedActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         mContext.startActivity(intent);
     }

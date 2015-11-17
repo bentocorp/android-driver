@@ -59,7 +59,7 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
                         SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
                         DebugUtils.logDebug(TAG, "Token: " + sToken);
 
-                        BentoDriveUtil.openListBentoActivity(LogInActivity.this);
+                        BentoDriveUtil.openBentoOrderActivity(LogInActivity.this);
                     }
                 });
 
