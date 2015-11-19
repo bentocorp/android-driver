@@ -19,13 +19,16 @@ import java.util.HashMap;
 /**
  * Created by Jose Torres on 11/10/15.
  */
-public class RequestGetAssignedOrders implements InterfaceWebRequest {
+public class RequestGetStatusOrders implements InterfaceWebRequest {
 
     public static final String TAG = "RequestGetAssignedOrders";
+    private OrderItemModel mOrderModel;
+
     private ListenerWebRequest mListener;
 
-    public RequestGetAssignedOrders(ListenerWebRequest mListener) {
+    public RequestGetStatusOrders(ListenerWebRequest mListener, OrderItemModel mOrderModel) {
         this.mListener = mListener;
+        this.mOrderModel = mOrderModel;
     }
 
     @Override
@@ -41,6 +44,8 @@ public class RequestGetAssignedOrders implements InterfaceWebRequest {
             @Override
             public HashMap<String, String> getParams() {
                 HashMap<String, String> headers = new HashMap<>();
+                headers.put("token", "text/xml; charset=UTF-8");
+                headers.put("orderId", "text/xml; charset=UTF-8");
                 headers.put("Content-Type", "text/xml; charset=UTF-8");
                 return headers;
             }

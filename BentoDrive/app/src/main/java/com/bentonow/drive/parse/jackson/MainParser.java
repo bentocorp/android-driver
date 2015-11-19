@@ -10,6 +10,8 @@ import com.fasterxml.jackson.core.JsonParser;
 
 public class MainParser {
 
+    static long init, now;
+
     public static String nameField;
     public static JsonFactory jsonFactory;
     public static JsonParser jp;
@@ -55,7 +57,6 @@ public class MainParser {
 //	public static final String TAG_= "";
 //	public static final String TAG_= "";
 
-    static long init, now, time;
 
     public static void tagNotFound() {
         try {

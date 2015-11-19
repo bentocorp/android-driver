@@ -1,23 +1,72 @@
 package com.bentonow.drive.model;
 
-import java.util.ArrayList;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 /**
  * Created by joseguadalupetorresfuentes on 15/11/15.
  */
-public class OrderItemModel {
+public class OrderItemModel implements Parcelable {
+
+    public static final String TAG = "OrderItemModel";
 
     private int orderType;
     private String id = "";
     private String name = "";
     private String phone = "";
     private Address address = new Address();
-    private ArrayList<MenuItemModel> items = new ArrayList<>();
-    private String task = "";
+    private String item = "";
     private int key;
-    private String orderString = "";
     private int driverId;
     private String status = "";
+
+    public OrderItemModel() {
+    }
+
+    public OrderItemModel(Parcel parcel) {
+        orderType = parcel.readInt();
+        id = parcel.readString();
+        name = parcel.readString();
+        phone = parcel.readString();
+        address = parcel.readParcelable(Address.class.getClassLoader());
+        item = parcel.readString();
+        key = parcel.readInt();
+        driverId = parcel.readInt();
+        status = parcel.readString();
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(orderType);
+        dest.writeString(id);
+        dest.writeString(name);
+        dest.writeString(phone);
+        dest.writeParcelable(address, flags);
+        dest.writeString(item);
+        dest.writeInt(key);
+        dest.writeInt(driverId);
+        dest.writeString(status);
+    }
+
+    @Override
+    public int describeContents() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    public static final Creator<OrderItemModel> CREATOR = new Creator<OrderItemModel>() {
+
+        @Override
+        public OrderItemModel[] newArray(int size) {
+            return new OrderItemModel[size];
+        }
+
+        @Override
+        public OrderItemModel createFromParcel(Parcel source) {
+            return new OrderItemModel(source);
+        }
+    };
+
 
     public String getId() {
         return id;
@@ -51,12 +100,12 @@ public class OrderItemModel {
         this.address = address;
     }
 
-    public ArrayList<MenuItemModel> getItems() {
-        return items;
+    public String getItem() {
+        return item;
     }
 
-    public void setItems(ArrayList<MenuItemModel> items) {
-        this.items = items;
+    public void setItem(String item) {
+        this.item = item;
     }
 
     public int getKey() {
@@ -65,14 +114,6 @@ public class OrderItemModel {
 
     public void setKey(int key) {
         this.key = key;
-    }
-
-    public String getOrderString() {
-        return orderString;
-    }
-
-    public void setOrderString(String orderString) {
-        this.orderString = orderString;
     }
 
     public int getDriverId() {
@@ -97,13 +138,5 @@ public class OrderItemModel {
 
     public void setOrderType(int orderType) {
         this.orderType = orderType;
-    }
-
-    public String getTask() {
-        return task;
-    }
-
-    public void setTask(String task) {
-        this.task = task;
     }
 }

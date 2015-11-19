@@ -6,28 +6,41 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.ImageView;
 
 import com.bentonow.drive.Application;
 import com.bentonow.drive.R;
+import com.bentonow.drive.controller.adapter.OrderListAdapter;
 import com.bentonow.drive.listener.ListenerWebRequest;
+import com.bentonow.drive.listener.RecyclerListListener;
+import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.web.request.RequestGetAssignedOrders;
+import com.bentonow.drive.widget.OrderDividerItemDecoration;
+
+import java.util.ArrayList;
 
 /**
  * Created by Jose Torres on 11/10/15.
  */
-public class ListOrderAssignedActivity extends MainActivity implements View.OnClickListener {
+public class ListOrderAssignedActivity extends MainActivity implements View.OnClickListener, RecyclerListListener {
 
     public static final String TAG = "ListOrderAssignedActivity";
 
     private ImageView imgMenuItemLogOut;
 
+    private RecyclerView mRecyclerView;
+    private OrderListAdapter mAdapter;
+
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
+
+    private ArrayList<OrderItemModel> aListOder;
 
     private boolean mBound = false;
 
@@ -38,6 +51,8 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
         getMenuItemLogOut().setOnClickListener(this);
 
+        getListOrder().setAdapter(getListAdapter());
+
         Application.getInstance().webRequest(new RequestGetAssignedOrders(new ListenerWebRequest() {
             @Override
             public void onError(String sError) {
@@ -46,6 +61,18 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
             @Override
             public void onResponse(Object oResponse) {
+                aListOder = (ArrayList<OrderItemModel>) oResponse;
+
+                if (!aListOder.isEmpty()) {
+                    getListAdapter().aListOrder.addAll(aListOder);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            getListAdapter().notifyDataSetChanged();
+                        }
+                    });
+                }
+
                 super.onResponse(oResponse);
             }
 
@@ -86,6 +113,14 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         }
     }
 
+
+    @Override
+    public void OnItemClickListener(int iPosition) {
+        Intent mIntentOrder = new Intent(ListOrderAssignedActivity.this, OrderAssignedActivity.class);
+        mIntentOrder.putExtra(OrderItemModel.TAG, getListAdapter().aListOrder.get(iPosition));
+        startActivity(mIntentOrder);
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -107,5 +142,22 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             imgMenuItemLogOut = (ImageView) findViewById(R.id.img_menu_item_log_out);
         return imgMenuItemLogOut;
     }
+
+
+    private RecyclerView getListOrder() {
+        if (mRecyclerView == null) {
+            mRecyclerView = (RecyclerView) findViewById(R.id.list_assigned_orders);
+            mRecyclerView.setLayoutManager(new LinearLayoutManager(ListOrderAssignedActivity.this));
+            mRecyclerView.addItemDecoration(new OrderDividerItemDecoration(ListOrderAssignedActivity.this));
+        }
+        return mRecyclerView;
+    }
+
+    private OrderListAdapter getListAdapter() {
+        if (mAdapter == null)
+            mAdapter = new OrderListAdapter(ListOrderAssignedActivity.this, ListOrderAssignedActivity.this);
+        return mAdapter;
+    }
+
 
 }

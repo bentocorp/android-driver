@@ -9,18 +9,16 @@ import android.os.IBinder;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 
-import com.bentonow.drive.Application;
 import com.bentonow.drive.R;
 import com.bentonow.drive.dialog.LoaderDialog;
-import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SocialNetworksUtil;
-import com.bentonow.drive.web.request.RequestGetAssignedOrders;
 import com.bentonow.drive.widget.material.ButtonFlat;
 
 /**
@@ -36,6 +34,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     private FrameLayout mContainerMap;
     private ButtonFlat btnAcceptOrder;
     private ButtonFlat btnRejectOrder;
+    private TextView txtOrderContent;
 
     private LoaderDialog mLoaderDialog;
 
@@ -51,6 +50,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_bento);
 
+        mOrderModel = getIntent().getParcelableExtra(OrderItemModel.TAG);
+
         getMenuItemLogOut().setOnClickListener(this);
         getContainerMessage().setOnClickListener(this);
         getContainerCall().setOnClickListener(this);
@@ -59,42 +60,9 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         getBtnAcceptOrder().setOnClickListener(this);
         getBtnRejectOrder().setOnClickListener(this);
 
-        getBentoOrders();
+        getTxtOrderContent().setText(mOrderModel.getItem());
 
     }
-
-    private void getBentoOrders() {
-        getLoaderDialog().show();
-
-        Application.getInstance().webRequest(new RequestGetAssignedOrders(new ListenerWebRequest() {
-            @Override
-            public void onError(String sError) {
-                super.onError(sError);
-            }
-
-            @Override
-            public void onResponse(Object oResponse) {
-                mOrderModel = (OrderItemModel) oResponse;
-
-                DebugUtils.logDebug(TAG, "getBentoOrders()" + mOrderModel.getName());
-
-                super.onResponse(oResponse);
-            }
-
-            @Override
-            public void onComplete() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        getLoaderDialog().dismiss();
-                    }
-                });
-            }
-        }
-
-        ));
-    }
-
 
     private class WebSocketServiceConnection implements ServiceConnection {
         @Override
@@ -199,6 +167,12 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         if (btnRejectOrder == null)
             btnRejectOrder = (ButtonFlat) findViewById(R.id.btn_reject_order);
         return btnRejectOrder;
+    }
+
+    private TextView getTxtOrderContent() {
+        if (txtOrderContent == null)
+            txtOrderContent = (TextView) findViewById(R.id.txt_order_content);
+        return txtOrderContent;
     }
 
 

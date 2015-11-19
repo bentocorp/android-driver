@@ -1,9 +1,12 @@
 package com.bentonow.drive.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 /**
  * Created by joseguadalupetorresfuentes on 15/11/15.
  */
-public class Address {
+public class Address implements Parcelable {
 
     private String street = "";
     private String residence = "";
@@ -13,6 +16,52 @@ public class Address {
     private String country = "";
     private double lat;
     private double lng;
+
+    public Address() {
+    }
+
+    public Address(Parcel parcel) {
+        street = parcel.readString();
+        residence = parcel.readString();
+        city = parcel.readString();
+        region = parcel.readString();
+        zipCode = parcel.readString();
+        country = parcel.readString();
+        lat = parcel.readDouble();
+        lng = parcel.readDouble();
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(street);
+        dest.writeString(residence);
+        dest.writeString(city);
+        dest.writeString(region);
+        dest.writeString(zipCode);
+        dest.writeString(country);
+        dest.writeDouble(lat);
+        dest.writeDouble(lng);
+    }
+
+    @Override
+    public int describeContents() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    public static final Creator<Address> CREATOR = new Creator<Address>() {
+
+        @Override
+        public Address[] newArray(int size) {
+            return new Address[size];
+        }
+
+        @Override
+        public Address createFromParcel(Parcel source) {
+            return new Address(source);
+        }
+    };
+
 
     public String getStreet() {
         return street;

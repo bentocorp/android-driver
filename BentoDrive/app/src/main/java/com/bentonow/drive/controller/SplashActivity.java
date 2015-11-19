@@ -7,18 +7,14 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.IBinder;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bentonow.drive.Application;
 import com.bentonow.drive.R;
-import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
-import com.bentonow.drive.web.request.RequestGetAssignedOrders;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -51,7 +47,7 @@ public class SplashActivity extends MainActivity {
             @Override
             public void onFinish() {
                 if (BentoDriveUtil.isUserConnected()) {
-                    BentoDriveUtil.openBentoOrderActivity(SplashActivity.this);
+                    BentoDriveUtil.openListBentoActivity(SplashActivity.this);
                 } else {
                     BentoDriveUtil.openLogInActivity(SplashActivity.this);
                 }
