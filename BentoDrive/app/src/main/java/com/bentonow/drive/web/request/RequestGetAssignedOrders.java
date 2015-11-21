@@ -31,7 +31,7 @@ public class RequestGetAssignedOrders implements InterfaceWebRequest {
     @Override
     public void dispatchRequest() {
 
-        Request request = new Request(Request.Method.GET, BentoDriveAPI.getAsignedOrdersUrl(), getErrorListener()) {
+        Request request = new Request(Request.Method.GET, BentoDriveAPI.getAssignedOrdersUrl(), getErrorListener()) {
 
             @Override
             public int compareTo(Object another) {

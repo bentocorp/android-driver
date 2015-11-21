@@ -11,14 +11,18 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bentonow.drive.Application;
 import com.bentonow.drive.R;
 import com.bentonow.drive.dialog.LoaderDialog;
+import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
+import com.bentonow.drive.util.ConstantUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SocialNetworksUtil;
+import com.bentonow.drive.web.request.RequestGetStatusOrders;
 import com.bentonow.drive.widget.material.ButtonFlat;
 
 /**
@@ -62,6 +66,45 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
         getTxtOrderContent().setText(mOrderModel.getItem());
 
+    }
+
+    private void acceptOrder() {
+        Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.ACCEPT, mOrderModel, new ListenerWebRequest() {
+            @Override
+            public void onError(String sError) {
+                onComplete();
+            }
+
+            @Override
+            public void onResponse(Object oResponse) {
+                onComplete();
+            }
+
+            @Override
+            public void onComplete() {
+                super.onComplete();
+            }
+        }));
+
+    }
+
+    private void cancelOrder() {
+        Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.REJECT , mOrderModel, new ListenerWebRequest() {
+            @Override
+            public void onError(String sError) {
+                onComplete();
+            }
+
+            @Override
+            public void onResponse(Object oResponse) {
+                onComplete();
+            }
+
+            @Override
+            public void onComplete() {
+                super.onComplete();
+            }
+        }));
     }
 
     private class WebSocketServiceConnection implements ServiceConnection {

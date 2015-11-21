@@ -17,14 +17,26 @@ import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.web.BentoDriveAPI;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.nkzawa.emitter.Emitter;
-import com.github.nkzawa.socketio.client.Ack;
-import com.github.nkzawa.socketio.client.IO;
-import com.github.nkzawa.socketio.client.Socket;
 
 import org.bentocorp.api.APIResponse;
 import org.bentocorp.api.Authenticate;
 import org.bentocorp.api.ws.Push;
+
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import io.socket.client.Ack;
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 
 public class WebSocketService extends Service implements UpdateLocationListener {
 
@@ -60,9 +72,17 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         } else {
             try {
                 connecting = true;
-                //cert(); // XXX - ssl connection on android doesn't work?
+
+                SSLContext sc = SSLContext.getInstance("TLS");
+                sc.init(null, trustAllCerts, new SecureRandom());
+                IO.setDefaultSSLContext(sc);
+                HttpsURLConnection.setDefaultHostnameVerifier(new RelaxedHostNameVerifier());
+
                 IO.Options opts = new IO.Options();
                 opts.forceNew = true;
+                opts.secure = true;
+                opts.sslContext = sc;
+
                 //opts.timeout = 5000;
                 mSocket = IO.socket(BentoDriveAPI.NODE_URL, opts);
                 socketAuthenticate(username, password, mListener);
@@ -123,7 +143,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             @Override
             public void call(Object[] args) {
                 mListener.onConnectionError(args[0].toString());
-                DebugUtils.logError(TAG, "connection-error");
+                DebugUtils.logError(TAG, "connection-error" + args[0].toString());
                 // occurs if the server goes down to automatically reconnect, do not disconnect here
             }
         });
@@ -227,5 +247,23 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         }
     }
 
+    private TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+            return new java.security.cert.X509Certificate[]{};
+        }
 
+        public void checkClientTrusted(X509Certificate[] chain,
+                                       String authType) throws CertificateException {
+        }
+
+        public void checkServerTrusted(X509Certificate[] chain,
+                                       String authType) throws CertificateException {
+        }
+    }};
+
+    public static class RelaxedHostNameVerifier implements HostnameVerifier {
+        public boolean verify(String hostname, SSLSession session) {
+            return true;
+        }
+    }
 }

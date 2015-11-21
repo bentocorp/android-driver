@@ -9,11 +9,10 @@ import com.bentonow.drive.Application;
 import com.bentonow.drive.listener.InterfaceWebRequest;
 import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.model.OrderItemModel;
-import com.bentonow.drive.parse.jackson.BentoOrderJsonParser;
+import com.bentonow.drive.util.ConstantUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.web.BentoDriveAPI;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -23,18 +22,20 @@ public class RequestGetStatusOrders implements InterfaceWebRequest {
 
     public static final String TAG = "RequestGetAssignedOrders";
     private OrderItemModel mOrderModel;
+    private ConstantUtil.optStatusOrder optStatusOrder;
 
     private ListenerWebRequest mListener;
 
-    public RequestGetStatusOrders(ListenerWebRequest mListener, OrderItemModel mOrderModel) {
+    public RequestGetStatusOrders(ConstantUtil.optStatusOrder optStatusOrder, OrderItemModel mOrderModel, ListenerWebRequest mListener) {
         this.mListener = mListener;
         this.mOrderModel = mOrderModel;
+        this.optStatusOrder = optStatusOrder;
     }
 
     @Override
     public void dispatchRequest() {
 
-        Request request = new Request(Request.Method.GET, BentoDriveAPI.getAsignedOrdersUrl(), getErrorListener()) {
+        Request request = new Request(Request.Method.GET, BentoDriveAPI.getStatusOrderUrl(optStatusOrder, mOrderModel.getId()), getErrorListener()) {
 
             @Override
             public int compareTo(Object another) {
@@ -44,8 +45,6 @@ public class RequestGetStatusOrders implements InterfaceWebRequest {
             @Override
             public HashMap<String, String> getParams() {
                 HashMap<String, String> headers = new HashMap<>();
-                headers.put("token", "text/xml; charset=UTF-8");
-                headers.put("orderId", "text/xml; charset=UTF-8");
                 headers.put("Content-Type", "text/xml; charset=UTF-8");
                 return headers;
             }
@@ -56,18 +55,14 @@ public class RequestGetStatusOrders implements InterfaceWebRequest {
                 try {
                     jsonString = new String(networkResponse.data, HttpHeaderParser.parseCharset(networkResponse.headers));
 
-                    // DebugUtils.logDebug(TAG, "Response: " + jsonString);
+                    DebugUtils.logDebug(TAG, "Response: " + jsonString);
                     // DebugUtils.logDebug(TAG, "Headers: " + networkResponse.headers);
                     DebugUtils.logDebug(TAG, "Time: " + networkResponse.networkTimeMs);
                     DebugUtils.logDebug(TAG, "Code: " + networkResponse.statusCode);
                     // DebugUtils.logDebug(TAG, "Modified: " + networkResponse.notModified);
 
-                    ArrayList<OrderItemModel> aListOrder;
-
-                    aListOrder = BentoOrderJsonParser.parseBentoListOrder(jsonString);
-
                     if (mListener != null)
-                        mListener.onResponse(aListOrder);
+                        mListener.onResponse(jsonString);
                 } catch (Exception ex) {
                     DebugUtils.logError(TAG, ex);
                     if (mListener != null)
