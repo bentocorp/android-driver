@@ -9,6 +9,8 @@ import com.bentonow.drive.Application;
 import com.bentonow.drive.listener.InterfaceWebRequest;
 import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.model.OrderItemModel;
+import com.bentonow.drive.model.ResponseModel;
+import com.bentonow.drive.parse.jackson.MainParser;
 import com.bentonow.drive.util.ConstantUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.web.BentoDriveAPI;
@@ -60,9 +62,10 @@ public class RequestGetStatusOrders implements InterfaceWebRequest {
                     DebugUtils.logDebug(TAG, "Time: " + networkResponse.networkTimeMs);
                     DebugUtils.logDebug(TAG, "Code: " + networkResponse.statusCode);
                     // DebugUtils.logDebug(TAG, "Modified: " + networkResponse.notModified);
+                    ResponseModel mResponse = MainParser.getObjectMapper().readValue(jsonString, ResponseModel.class);
 
                     if (mListener != null)
-                        mListener.onResponse(jsonString);
+                        mListener.onResponse(mResponse);
                 } catch (Exception ex) {
                     DebugUtils.logError(TAG, ex);
                     if (mListener != null)

@@ -18,6 +18,8 @@ public class BentoDriveAPI {
     public final static String URL_GET_ORDERS = "/api/order/getAllAssigned?token=";
     public final static String URL_GET_STATUS_ACCEPT = "/api/order/accept?token=%s&orderId=%s";
     public final static String URL_GET_STATUS_REJECT = "/api/order/reject?token=%s&orderId=%s";
+    public final static String URL_GET_STATUS_ARRIVED = "/api/sms/bento-here?token=%s&orderId=%s";
+    public final static String URL_GET_STATUS_COMPLETE = "/api/order/complete?token=%s&orderId=%s";
 
 
     public static String getAuthenticationUrl(String sUsername, String sPassword) {
@@ -39,14 +41,25 @@ public class BentoDriveAPI {
     }
 
     public static String getStatusOrderUrl(ConstantUtil.optStatusOrder optStatus, String sOrderId) {
+        String sUrl = "";
+        DebugUtils.logDebug("URL: " + sUrl);
         switch (optStatus) {
             case ACCEPT:
-                return HOUSTON_URL + String.format(URL_GET_STATUS_ACCEPT, SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.TOKEN), sOrderId);
+                sUrl = HOUSTON_URL + String.format(URL_GET_STATUS_ACCEPT, SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.TOKEN), sOrderId);
+                break;
             case REJECT:
-                return HOUSTON_URL + String.format(URL_GET_STATUS_REJECT, SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.TOKEN), sOrderId);
+                sUrl = HOUSTON_URL + String.format(URL_GET_STATUS_REJECT, SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.TOKEN), sOrderId);
+                break;
+            case ARRIVED:
+                sUrl = HOUSTON_URL + String.format(URL_GET_STATUS_ARRIVED, SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.TOKEN), sOrderId);
+                break;
+            case COMPLETE:
+                sUrl = HOUSTON_URL + String.format(URL_GET_STATUS_COMPLETE, SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.TOKEN), sOrderId);
+                break;
             default:
-                return "";
+                sUrl = "";
         }
+        return sUrl;
     }
 
 }

@@ -5,5 +5,5 @@ package com.bentonow.drive.util;
  */
 public class ConstantUtil {
 
-    public enum optStatusOrder {ACCEPT, REJECT}
+    public enum optStatusOrder {ACCEPT, REJECT, ARRIVED, COMPLETE}
 }

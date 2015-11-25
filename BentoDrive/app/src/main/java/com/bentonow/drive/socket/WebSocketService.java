@@ -7,6 +7,7 @@ import android.os.Binder;
 import android.os.IBinder;
 
 import com.bentonow.drive.Application;
+import com.bentonow.drive.listener.NodeEventsListener;
 import com.bentonow.drive.listener.UpdateLocationListener;
 import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.model.SocketResponseModel;
@@ -59,6 +60,11 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 public void onAuthenticationFailure(String reason) {
                     BentoDriveUtil.disconnectUser(WebSocketService.this);
                 }
+
+                @Override
+                public void onAuthenticationSuccess(String token) {
+                    DebugUtils.logDebug(TAG, "Log In Success");
+                }
             });
         }
     }
@@ -77,8 +83,16 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 sc.init(null, trustAllCerts, new SecureRandom());
                 IO.setDefaultSSLContext(sc);
                 HttpsURLConnection.setDefaultHostnameVerifier(new RelaxedHostNameVerifier());
+                IO.setDefaultHostnameVerifier(new HostnameVerifier() {
+                    @Override
+                    public boolean verify(String hostname, SSLSession session) {
+                        return true;
+                    }
+                });
 
                 IO.Options opts = new IO.Options();
+
+                opts.port = 8081;
                 opts.forceNew = true;
                 opts.secure = true;
                 opts.sslContext = sc;
@@ -164,17 +178,24 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 //disconnectingPurposefully = false;
             }
         });
-        mSocket.on("push", new Emitter.Listener() {
-            @Override
-            public void call(Object[] args) {
-                try {
-                    Push push = mapper.readValue(args[0].toString(), Push.class);
-                    mListener.onPush(push);
-                } catch (Exception e) {
-                    DebugUtils.logError(TAG, "push: " + e.toString());
+    }
+
+    public void onNodeEventListener(final NodeEventsListener mListener) {
+        if (mSocket != null && mListener != null) {
+            mSocket.off("push");
+            mSocket.on("push", new Emitter.Listener() {
+                @Override
+                public void call(Object[] args) {
+                    try {
+                        //  DebugUtils.logDebug(TAG, "push: " + args[0].toString());
+                        Push push = mapper.readValue(args[0].toString(), Push.class);
+                        mListener.onPush(push);
+                    } catch (Exception e) {
+                        DebugUtils.logError(TAG, "push: " + e.toString());
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     public void disconnectWebSocket() {

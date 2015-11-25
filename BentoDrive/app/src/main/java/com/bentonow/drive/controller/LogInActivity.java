@@ -10,11 +10,13 @@ import android.view.View;
 import android.widget.EditText;
 
 import com.bentonow.drive.R;
+import com.bentonow.drive.dialog.LoaderDialog;
 import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
+import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.widget.material.ButtonRectangle;
 
 /**
@@ -28,10 +30,13 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
     private EditText editPassword;
     private ButtonRectangle btnLogIn;
 
+    private LoaderDialog mLoaderDialog;
+
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
 
     private boolean mBound = false;
+    private boolean bAlreadyOpen = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +44,8 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
         setContentView(R.layout.activity_log_in);
 
         if (BentoDriveUtil.bIsKokushoTesting) {
-            getEditUsername().setText("marc@bentonow.com");
-            getEditPassword().setText("wordpass");
+            getEditUsername().setText("jose.torres@gmail.com");
+            getEditPassword().setText("bento");
         }
 
         getBtnLogIn().setOnClickListener(this);
@@ -50,16 +55,30 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
         if (mBound) {
             boolean bIsConnected = webSocketService.isConnectedUser();
             if (!bIsConnected) {
+                getLoaderDialog().show();
+
                 DebugUtils.logDebug(TAG, "Attempting to connect to node");
 
                 webSocketService.connectWebSocket(getEditUsername().getText().toString(), getEditPassword().getText().toString(), new WebSocketEventListener() {
                     @Override
                     public void onAuthenticationSuccess(String sToken) {
-                        SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
-                        SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
-                        DebugUtils.logDebug(TAG, "Token: " + sToken);
+                        if (!bAlreadyOpen) {
+                            SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
+                            SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
+                            DebugUtils.logDebug(TAG, "Token: " + sToken);
 
-                        BentoDriveUtil.openListBentoActivity(LogInActivity.this);
+                            BentoDriveUtil.openListBentoActivity(LogInActivity.this);
+
+                            bAlreadyOpen = true;
+                        }
+
+                    }
+
+                    @Override
+                    public void onAuthenticationFailure(String sReason) {
+                        getLoaderDialog().dismiss();
+                        WidgetsUtils.createShortToast("There was a problem: " + sReason);
+                        bAlreadyOpen = false;
                     }
                 });
 
@@ -132,6 +151,12 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
         if (btnLogIn == null)
             btnLogIn = (ButtonRectangle) findViewById(R.id.btn_login);
         return btnLogIn;
+    }
+
+    private LoaderDialog getLoaderDialog() {
+        if (mLoaderDialog == null)
+            mLoaderDialog = new LoaderDialog(LogInActivity.this);
+        return mLoaderDialog;
     }
 
 }

@@ -16,12 +16,14 @@ import com.bentonow.drive.R;
 import com.bentonow.drive.dialog.LoaderDialog;
 import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.model.OrderItemModel;
+import com.bentonow.drive.model.ResponseModel;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.ConstantUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SocialNetworksUtil;
+import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.request.RequestGetStatusOrders;
 import com.bentonow.drive.widget.material.ButtonFlat;
 
@@ -38,6 +40,9 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     private FrameLayout mContainerMap;
     private ButtonFlat btnAcceptOrder;
     private ButtonFlat btnRejectOrder;
+    private ButtonFlat btnCompleteOrder;
+    private ButtonFlat btnArrivedOrder;
+
     private TextView txtOrderContent;
 
     private LoaderDialog mLoaderDialog;
@@ -56,19 +61,53 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
         mOrderModel = getIntent().getParcelableExtra(OrderItemModel.TAG);
 
-        getMenuItemLogOut().setOnClickListener(this);
         getContainerMessage().setOnClickListener(this);
         getContainerCall().setOnClickListener(this);
         getContainerMap().setOnClickListener(this);
 
         getBtnAcceptOrder().setOnClickListener(this);
         getBtnRejectOrder().setOnClickListener(this);
+        getBtnArrivedOrder().setOnClickListener(this);
+        getBtnCompleteOrder().setOnClickListener(this);
 
         getTxtOrderContent().setText(mOrderModel.getItem());
 
+        updateUI();
+
+    }
+
+    private void updateUI() {
+
+        switch (mOrderModel.getStatus()) {
+            case "PENDING":
+                getBtnAcceptOrder().setVisibility(View.VISIBLE);
+                getBtnRejectOrder().setVisibility(View.VISIBLE);
+                getBtnArrivedOrder().setVisibility(View.GONE);
+                getBtnCompleteOrder().setVisibility(View.GONE);
+                break;
+            case "ACCEPTED":
+                getBtnAcceptOrder().setVisibility(View.GONE);
+                getBtnRejectOrder().setVisibility(View.GONE);
+                getBtnArrivedOrder().setVisibility(View.VISIBLE);
+                getBtnCompleteOrder().setVisibility(View.GONE);
+                break;
+            case "ARRIVED":
+                getBtnAcceptOrder().setVisibility(View.GONE);
+                getBtnRejectOrder().setVisibility(View.GONE);
+                getBtnArrivedOrder().setVisibility(View.GONE);
+                getBtnCompleteOrder().setVisibility(View.VISIBLE);
+                break;
+            case "REJECTED":
+                getBtnAcceptOrder().setVisibility(View.VISIBLE);
+                getBtnRejectOrder().setVisibility(View.GONE);
+                getBtnArrivedOrder().setVisibility(View.GONE);
+                getBtnCompleteOrder().setVisibility(View.GONE);
+                break;
+        }
     }
 
     private void acceptOrder() {
+        getLoaderDialog().show();
         Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.ACCEPT, mOrderModel, new ListenerWebRequest() {
             @Override
             public void onError(String sError) {
@@ -77,19 +116,52 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
             @Override
             public void onResponse(Object oResponse) {
+                ResponseModel mResponse = (ResponseModel) oResponse;
+
+                switch (mResponse.getCode()) {
+                    case 0:
+                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty())
+                            WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mOrderModel.setStatus("ACCEPTED");
+                                updateUI();
+                            }
+                        });
+                        break;
+                    case 1:
+                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
+                            if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mOrderModel.setStatus("ACCEPTED");
+                                        updateUI();
+                                    }
+                                });
+                            } else
+                                WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
+                        }
+                        break;
+                }
+
                 onComplete();
             }
 
             @Override
             public void onComplete() {
+                dismissDialog();
                 super.onComplete();
             }
         }));
 
     }
 
-    private void cancelOrder() {
-        Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.REJECT , mOrderModel, new ListenerWebRequest() {
+    private void rejectOrder() {
+        getLoaderDialog().show();
+        Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.REJECT, mOrderModel, new ListenerWebRequest() {
             @Override
             public void onError(String sError) {
                 onComplete();
@@ -97,14 +169,150 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
             @Override
             public void onResponse(Object oResponse) {
+                ResponseModel mResponse = (ResponseModel) oResponse;
+                switch (mResponse.getCode()) {
+                    case 0:
+                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty())
+                            WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mOrderModel.setStatus("REJECTED");
+                                updateUI();
+                            }
+                        });
+                        break;
+                    case 1:
+                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
+                            if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mOrderModel.setStatus("REJECTED");
+                                        updateUI();
+                                    }
+                                });
+                            } else
+                                WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
+                        }
+                        break;
+                }
                 onComplete();
             }
 
             @Override
             public void onComplete() {
+                dismissDialog();
                 super.onComplete();
             }
         }));
+    }
+
+
+    private void arrivedOrder() {
+        getLoaderDialog().show();
+        Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.ARRIVED, mOrderModel, new ListenerWebRequest() {
+            @Override
+            public void onError(String sError) {
+                onComplete();
+            }
+
+            @Override
+            public void onResponse(Object oResponse) {
+                ResponseModel mResponse = (ResponseModel) oResponse;
+                switch (mResponse.getCode()) {
+                    case 0:
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mOrderModel.setStatus("ARRIVED");
+                                updateUI();
+                            }
+                        });
+                        break;
+                    case 1:
+                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
+                            if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mOrderModel.setStatus("ARRIVED");
+                                        updateUI();
+                                    }
+                                });
+                            } else
+                                WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
+                        }
+                        break;
+                }
+
+                onComplete();
+            }
+
+            @Override
+            public void onComplete() {
+                dismissDialog();
+                super.onComplete();
+            }
+        }));
+    }
+
+    private void completeOrder() {
+        getLoaderDialog().show();
+        Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.COMPLETE, mOrderModel, new ListenerWebRequest() {
+            @Override
+            public void onError(String sError) {
+                onComplete();
+            }
+
+            @Override
+            public void onResponse(Object oResponse) {
+                ResponseModel mResponse = (ResponseModel) oResponse;
+                switch (mResponse.getCode()) {
+                    case 0:
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mOrderModel.setStatus("COMPLETED");
+                                onBackPressed();
+                            }
+                        });
+                        break;
+                    case 1:
+                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
+                            if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mOrderModel.setStatus("COMPLETED");
+                                        onBackPressed();
+                                    }
+                                });
+                            } else
+                                WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
+                        }
+                        break;
+                }
+
+                onComplete();
+            }
+
+            @Override
+            public void onComplete() {
+                dismissDialog();
+                super.onComplete();
+            }
+        }));
+    }
+
+    private void dismissDialog() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                getLoaderDialog().dismiss();
+            }
+        });
     }
 
     private class WebSocketServiceConnection implements ServiceConnection {
@@ -126,10 +334,6 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.img_menu_item_log_out:
-                webSocketService.disconnectWebSocket();
-                BentoDriveUtil.disconnectUser(OrderAssignedActivity.this);
-                break;
             case R.id.container_message:
                 if (mOrderModel != null)
                     AndroidUtil.sendSms(OrderAssignedActivity.this, mOrderModel.getPhone(), "Message");
@@ -143,10 +347,16 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                     SocialNetworksUtil.openWazeLocation(OrderAssignedActivity.this, mOrderModel.getAddress().getLat(), mOrderModel.getAddress().getLng());
                 break;
             case R.id.btn_accept_order:
-
+                acceptOrder();
                 break;
             case R.id.btn_reject_order:
-
+                rejectOrder();
+                break;
+            case R.id.btn_arrived_order:
+                arrivedOrder();
+                break;
+            case R.id.btn_complete_order:
+                completeOrder();
                 break;
             default:
                 DebugUtils.logError(TAG, "OnClick(): " + v.getId());
@@ -174,12 +384,6 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         if (mLoaderDialog == null)
             mLoaderDialog = new LoaderDialog(OrderAssignedActivity.this);
         return mLoaderDialog;
-    }
-
-    private ImageView getMenuItemLogOut() {
-        if (imgMenuItemLogOut == null)
-            imgMenuItemLogOut = (ImageView) findViewById(R.id.img_menu_item_log_out);
-        return imgMenuItemLogOut;
     }
 
     private FrameLayout getContainerMessage() {
@@ -210,6 +414,19 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         if (btnRejectOrder == null)
             btnRejectOrder = (ButtonFlat) findViewById(R.id.btn_reject_order);
         return btnRejectOrder;
+    }
+
+    private ButtonFlat getBtnArrivedOrder() {
+        if (btnArrivedOrder == null)
+            btnArrivedOrder = (ButtonFlat) findViewById(R.id.btn_arrived_order);
+        return btnArrivedOrder;
+    }
+
+
+    private ButtonFlat getBtnCompleteOrder() {
+        if (btnCompleteOrder == null)
+            btnCompleteOrder = (ButtonFlat) findViewById(R.id.btn_complete_order);
+        return btnCompleteOrder;
     }
 
     private TextView getTxtOrderContent() {

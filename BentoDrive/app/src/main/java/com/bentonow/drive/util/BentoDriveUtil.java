@@ -43,4 +43,8 @@ public class BentoDriveUtil {
         SharedPreferencesUtil.clearAllPreferences();
         openLogInActivity(ctx);
     }
+
+    public static boolean isInvalidPhoneNumber(String sMessage) {
+        return sMessage.contains("is not a mobile number") || sMessage.contains("is not a valid phone number");
+    }
 }

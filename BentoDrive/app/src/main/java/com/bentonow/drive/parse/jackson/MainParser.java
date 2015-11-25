@@ -7,6 +7,8 @@ package com.bentonow.drive.parse.jackson;
 import com.bentonow.drive.util.DebugUtils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class MainParser {
 
@@ -73,6 +75,12 @@ public class MainParser {
     public static void stopParsed() {
         now = System.currentTimeMillis();
         DebugUtils.logDebug("Parse en :: " + (now - init) + " ms");
+    }
+
+    public static ObjectMapper getObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return objectMapper;
     }
 
 }

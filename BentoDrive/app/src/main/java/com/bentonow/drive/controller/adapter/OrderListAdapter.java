@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import com.bentonow.drive.R;
 import com.bentonow.drive.listener.RecyclerListListener;
 import com.bentonow.drive.model.OrderItemModel;
+import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.widget.wrapper.ItemOrderWrapper;
 
 import java.util.ArrayList;
@@ -21,6 +22,8 @@ import java.util.ArrayList;
  */
 
 public class OrderListAdapter extends RecyclerView.Adapter<ItemOrderWrapper> {
+
+    public static final String TAG = "OrderListAdapter";
 
     private Activity mActivity;
     private RecyclerListListener mClickListener;
@@ -57,12 +60,20 @@ public class OrderListAdapter extends RecyclerView.Adapter<ItemOrderWrapper> {
             }
         });
 
+        DebugUtils.logDebug(TAG, mOrder.getStatus());
+
         switch (mOrder.getStatus()) {
             case "PENDING":
                 viewHolder.getImgOrderStatus().setImageDrawable(mActivity.getResources().getDrawable(R.drawable.circle_yellow));
                 break;
-            default:
+            case "ACCEPTED":
                 viewHolder.getImgOrderStatus().setImageDrawable(mActivity.getResources().getDrawable(R.drawable.circle_green));
+                break;
+            case "REJECTED":
+                viewHolder.getImgOrderStatus().setImageDrawable(mActivity.getResources().getDrawable(R.drawable.circle_red));
+                break;
+            default:
+                viewHolder.getImgOrderStatus().setImageDrawable(mActivity.getResources().getDrawable(R.drawable.background_transparent));
                 break;
         }
 
