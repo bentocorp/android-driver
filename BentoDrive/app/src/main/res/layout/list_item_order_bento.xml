@@ -6,68 +6,78 @@
     tools:context=".controller.ListOrderAssignedActivity">
 
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:orientation="horizontal"
-        android:weightSum="100">
-
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="15">
-
-            <ImageView
-                android:id="@+id/img_order_status"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_margin="15dp"
-                android:src="@drawable/circle_yellow" />
-        </FrameLayout>
+        android:layout_height="82dp">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="75"
-            android:orientation="vertical"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="5dp"
+            android:background="@drawable/bg_card"
+            android:orientation="horizontal"
             android:weightSum="100">
 
-            <TextView
-                android:id="@+id/txt_street"
-                style="@style/TxtListTitle"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:text="53 Capp St"
-                android:layout_weight="35" />
-
-            <TextView
-                android:id="@+id/txt_city"
-                style="@style/TxtListTitle"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:text="San Francisco"
-                android:layout_weight="35" />
-
-            <TextView
-                android:id="@+id/txt_user_order"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                style="@style/TxtListSubTitle"
-                android:text="Kokusho"
-                android:layout_weight="30" />
-        </LinearLayout>
-
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="10">
-
-            <ImageView
-                android:layout_width="match_parent"
+            <FrameLayout
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_hardware_keyboard_arrow_right" />
-        </FrameLayout>
-    </LinearLayout>
+                android:layout_weight="15">
+
+                <ImageView
+                    android:id="@+id/img_order_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="15dp"
+                    android:src="@drawable/circle_yellow" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="75"
+                android:orientation="vertical"
+                android:weightSum="100">
+
+                <TextView
+                    android:id="@+id/txt_street"
+                    style="@style/TxtListTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="35"
+                    android:text="53 Capp St" />
+
+                <TextView
+                    android:id="@+id/txt_city"
+                    style="@style/TxtListTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="35"
+                    android:text="San Francisco" />
+
+                <TextView
+                    android:id="@+id/txt_user_order"
+                    style="@style/TxtListSubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="30"
+                    android:text="Kokusho" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="10">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_hardware_keyboard_arrow_right" />
+            </FrameLayout>
+        </LinearLayout>
+    </FrameLayout>
 
 
 </FrameLayout>

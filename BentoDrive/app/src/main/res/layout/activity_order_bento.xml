@@ -19,56 +19,91 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:weightSum="2"
+                android:layout_toLeftOf="@+id/linearLayout"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true">
+
+                <TextView
+                    style="@style/TxtToolbarTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_weight="1"
+                    android:text="Task" />
+
+                <TextView
+                    android:id="@+id/txt_toolbar_subtitle"
+                    style="@style/TxtToolbarSubTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_weight="1"
+                    android:text="Kokusho Torres" />
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentTop="true"
+                android:orientation="horizontal"
+                android:id="@+id/linearLayout">
+
+                <FrameLayout
+                    android:id="@+id/container_message"
+                    android:layout_width="48dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/ic_action_communication_message" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/container_call"
+                    android:layout_width="48dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/ic_action_communication_call" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/container_map"
+                    android:layout_width="48dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/ic_action_maps_map" />
+                </FrameLayout>
+            </LinearLayout>
+
         </RelativeLayout>
 
     </android.support.v7.widget.Toolbar>
-
-
-    <LinearLayout
-        android:id="@+id/container_actions"
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:layout_below="@+id/toolbar"
-        android:layout_centerHorizontal="true"
-        android:orientation="horizontal"
-        android:weightSum="90">
-
-        <FrameLayout
-            android:id="@+id/container_message"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="30">
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/ic_action_communication_message" />
-        </FrameLayout>
-
-        <FrameLayout
-            android:id="@+id/container_call"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="30">
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/ic_action_communication_call" />
-        </FrameLayout>
-
-        <FrameLayout
-            android:id="@+id/container_map"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="30">
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/ic_action_maps_map" />
-        </FrameLayout>
-    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/container_buttons"
@@ -120,7 +155,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/container_buttons"
-        android:layout_below="@+id/container_actions"
+        android:layout_below="@+id/toolbar"
         android:fillViewport="true"
         android:scrollbars="vertical">
 

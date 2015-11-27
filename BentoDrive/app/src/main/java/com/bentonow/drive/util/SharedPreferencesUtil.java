@@ -5,8 +5,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 
-import com.bentonow.drive.Application;
-
 /**
  * Created by Jose Torres on 11/10/15.
  */
@@ -34,8 +32,8 @@ public class SharedPreferencesUtil {
      * @param key   The String that is going to be the key
      * @param value The String that is going to be saved
      */
-    public static void setAppPreference(String key, String value) {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static void setAppPreference(Context mContext, String key, String value) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         Editor editor = manager.edit();
         editor.putString(key, value);
         editor.commit();
@@ -47,8 +45,8 @@ public class SharedPreferencesUtil {
      * @param key   The String that is going to be the key
      * @param value The Integer that is going to be saved
      */
-    public static void setAppPreference(String key, int value) {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static void setAppPreference(Context mContext, String key, int value) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         Editor editor = manager.edit();
         editor.putInt(key, value);
         editor.commit();
@@ -60,8 +58,8 @@ public class SharedPreferencesUtil {
      * @param key   The String that is going to be the key
      * @param value The String that is going to be saved
      */
-    public static void setAppPreference(String key, boolean value) {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static void setAppPreference(Context mContext, String key, boolean value) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         Editor editor = manager.edit();
         editor.putBoolean(key, value);
         editor.commit();
@@ -73,8 +71,8 @@ public class SharedPreferencesUtil {
      * @param key   The String that is going to be the key
      * @param value The Long that is going to be saved
      */
-    public static void setAppPreference(String key, long value) {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static void setAppPreference(Context mContext, String key, long value) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         Editor editor = manager.edit();
         editor.putLong(key, value);
         editor.commit();
@@ -86,8 +84,8 @@ public class SharedPreferencesUtil {
      * @param key   The String that is going to be the key
      * @param value The Long that is going to be saved
      */
-    public static void setAppPreference(String key, float value) {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static void setAppPreference(Context mContext, String key, float value) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         Editor editor = manager.edit();
         editor.putFloat(key, value);
         editor.commit();
@@ -99,8 +97,8 @@ public class SharedPreferencesUtil {
      * @param key The String that is going to be the key
      * @return String The string that was saved with the key
      */
-    public static String getStringPreference(String key) {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static String getStringPreference(Context mContext, String key) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         return manager.getString(key, "");
     }
 
@@ -110,8 +108,8 @@ public class SharedPreferencesUtil {
      * @param key The String that is going to be the key
      * @return The Integer that was saved with the key
      */
-    public static int getIntPreference(String key) {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static int getIntPreference(Context mContext, String key) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         return manager.getInt(key, 0);
     }
 
@@ -121,8 +119,8 @@ public class SharedPreferencesUtil {
      * @param key The String that is going to be the key
      * @return The Long that was saved with the key
      */
-    public static long getLongPreference(String key) {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static long getLongPreference(Context mContext, String key) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         return manager.getLong(key, 0);
     }
 
@@ -132,8 +130,8 @@ public class SharedPreferencesUtil {
      * @param key The String that is going to be the key
      * @return The Float that was saved with the key
      */
-    public static float getFloatPreference(String key) {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static float getFloatPreference(Context mContext, String key) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         return manager.getFloat(key, 0);
     }
 
@@ -143,14 +141,14 @@ public class SharedPreferencesUtil {
      * @param key The String that is going to be the key
      * @return The Boolean that was saved with the key
      */
-    public static boolean getBooleanPreference(String key) {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static boolean getBooleanPreference(Context mContext, String key) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         return manager.getBoolean(key, false);
     }
 
 
-    public static void clearAllPreferences() {
-        SharedPreferences manager = Application.getInstance().getSharedPreferences(SHARED_PROJECT, 0);
+    public static void clearAllPreferences(Context mContext) {
+        SharedPreferences manager = mContext.getSharedPreferences(SHARED_PROJECT, 0);
         Editor editor = manager.edit();
         editor.clear();
         editor.commit();

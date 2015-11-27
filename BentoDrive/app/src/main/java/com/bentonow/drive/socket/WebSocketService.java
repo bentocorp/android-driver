@@ -28,7 +28,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
@@ -54,18 +53,19 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     @Override
     public void onCreate() {
         DebugUtils.logDebug(TAG, "creating new WebSocketService");
-        if (BentoDriveUtil.isUserConnected() && !isConnectedUser()) {
-            connectWebSocket(SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.USER_NAME), SharedPreferencesUtil.getStringPreference(SharedPreferencesUtil.PASSWORD), new WebSocketEventListener() {
-                @Override
-                public void onAuthenticationFailure(String reason) {
-                    BentoDriveUtil.disconnectUser(WebSocketService.this);
-                }
+        if (BentoDriveUtil.isUserConnected(WebSocketService.this) && !isConnectedUser()) {
+            connectWebSocket(SharedPreferencesUtil.getStringPreference(WebSocketService.this, SharedPreferencesUtil.USER_NAME), SharedPreferencesUtil.getStringPreference(WebSocketService.this, SharedPreferencesUtil.PASSWORD),
+                    new WebSocketEventListener() {
+                        @Override
+                        public void onAuthenticationFailure(String reason) {
+                            BentoDriveUtil.disconnectUser(WebSocketService.this);
+                        }
 
-                @Override
-                public void onAuthenticationSuccess(String token) {
-                    DebugUtils.logDebug(TAG, "Log In Success");
-                }
-            });
+                        @Override
+                        public void onAuthenticationSuccess(String token) {
+                            DebugUtils.logDebug(TAG, "Log In Success");
+                        }
+                    });
         }
     }
 
@@ -82,7 +82,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 SSLContext sc = SSLContext.getInstance("TLS");
                 sc.init(null, trustAllCerts, new SecureRandom());
                 IO.setDefaultSSLContext(sc);
-                HttpsURLConnection.setDefaultHostnameVerifier(new RelaxedHostNameVerifier());
                 IO.setDefaultHostnameVerifier(new HostnameVerifier() {
                     @Override
                     public boolean verify(String hostname, SSLSession session) {
@@ -96,9 +95,10 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 opts.forceNew = true;
                 opts.secure = true;
                 opts.sslContext = sc;
+                opts.hostnameVerifier = new RelaxedHostNameVerifier();
 
                 //opts.timeout = 5000;
-                mSocket = IO.socket(BentoDriveAPI.NODE_URL, opts);
+                mSocket = IO.socket(BentoDriveAPI.getNodeUrl(WebSocketService.this), opts);
                 socketAuthenticate(username, password, mListener);
                 mSocket.connect();
             } catch (Exception e) {
@@ -131,7 +131,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                 } else {
                                     final String sToken = res.ret.token;
                                     mListener.onAuthenticationSuccess(sToken);
-                                    SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.TOKEN, sToken);
+                                    SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.TOKEN, sToken);
                                     Application.getInstance().handlerPost(new Runnable() {
                                         @Override
                                         public void run() {

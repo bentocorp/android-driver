@@ -7,17 +7,17 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 
 import com.bentonow.drive.R;
-import com.bentonow.drive.dialog.LoaderDialog;
+import com.bentonow.drive.dialog.ProgressDialog;
 import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
-import com.bentonow.drive.widget.material.ButtonRectangle;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -28,9 +28,9 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
 
     private EditText editUsername;
     private EditText editPassword;
-    private ButtonRectangle btnLogIn;
+    private Button btnLogIn;
 
-    private LoaderDialog mLoaderDialog;
+    private ProgressDialog mLoaderDialog;
 
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
@@ -63,8 +63,8 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
                     @Override
                     public void onAuthenticationSuccess(String sToken) {
                         if (!bAlreadyOpen) {
-                            SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
-                            SharedPreferencesUtil.setAppPreference(SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
+                            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
+                            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
                             DebugUtils.logDebug(TAG, "Token: " + sToken);
 
                             BentoDriveUtil.openListBentoActivity(LogInActivity.this);
@@ -147,15 +147,15 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
     }
 
 
-    private ButtonRectangle getBtnLogIn() {
+    private Button getBtnLogIn() {
         if (btnLogIn == null)
-            btnLogIn = (ButtonRectangle) findViewById(R.id.btn_login);
+            btnLogIn = (Button) findViewById(R.id.btn_login);
         return btnLogIn;
     }
 
-    private LoaderDialog getLoaderDialog() {
+    private ProgressDialog getLoaderDialog() {
         if (mLoaderDialog == null)
-            mLoaderDialog = new LoaderDialog(LogInActivity.this);
+            mLoaderDialog = new ProgressDialog(LogInActivity.this, "LogIn");
         return mLoaderDialog;
     }
 

@@ -46,7 +46,7 @@ public class SplashActivity extends MainActivity {
 
             @Override
             public void onFinish() {
-                if (BentoDriveUtil.isUserConnected()) {
+                if (BentoDriveUtil.isUserConnected(SplashActivity.this)) {
                     BentoDriveUtil.openListBentoActivity(SplashActivity.this);
                 } else {
                     BentoDriveUtil.openLogInActivity(SplashActivity.this);

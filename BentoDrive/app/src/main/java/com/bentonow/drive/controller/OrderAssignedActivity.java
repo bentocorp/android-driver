@@ -13,7 +13,7 @@ import android.widget.TextView;
 
 import com.bentonow.drive.Application;
 import com.bentonow.drive.R;
-import com.bentonow.drive.dialog.LoaderDialog;
+import com.bentonow.drive.dialog.ProgressDialog;
 import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.model.ResponseModel;
@@ -45,7 +45,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     private TextView txtOrderContent;
 
-    private LoaderDialog mLoaderDialog;
+    private ProgressDialog mLoaderDialog;
 
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
@@ -380,9 +380,9 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         }
     }
 
-    private LoaderDialog getLoaderDialog() {
+    private ProgressDialog getLoaderDialog() {
         if (mLoaderDialog == null)
-            mLoaderDialog = new LoaderDialog(OrderAssignedActivity.this);
+            mLoaderDialog = new ProgressDialog(OrderAssignedActivity.this, "Progressing....");
         return mLoaderDialog;
     }
 

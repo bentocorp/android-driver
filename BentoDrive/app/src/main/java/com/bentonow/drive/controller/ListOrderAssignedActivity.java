@@ -81,6 +81,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                     public void run() {
                         getListAdapter().notifyDataSetChanged();
                         getTxtEmptyView().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.VISIBLE : View.GONE);
+                        getListOrder().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.GONE : View.VISIBLE);
                     }
                 });
 
