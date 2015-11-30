@@ -11,7 +11,6 @@ import com.bentonow.drive.listener.NodeEventsListener;
 import com.bentonow.drive.listener.UpdateLocationListener;
 import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.model.SocketResponseModel;
-import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.GoogleLocationUtil;
 import com.bentonow.drive.util.SharedPreferencesUtil;
@@ -53,20 +52,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     @Override
     public void onCreate() {
         DebugUtils.logDebug(TAG, "creating new WebSocketService");
-        if (BentoDriveUtil.isUserConnected(WebSocketService.this) && !isConnectedUser()) {
-            connectWebSocket(SharedPreferencesUtil.getStringPreference(WebSocketService.this, SharedPreferencesUtil.USER_NAME), SharedPreferencesUtil.getStringPreference(WebSocketService.this, SharedPreferencesUtil.PASSWORD),
-                    new WebSocketEventListener() {
-                        @Override
-                        public void onAuthenticationFailure(String reason) {
-                            BentoDriveUtil.disconnectUser(WebSocketService.this);
-                        }
-
-                        @Override
-                        public void onAuthenticationSuccess(String token) {
-                            DebugUtils.logDebug(TAG, "Log In Success");
-                        }
-                    });
-        }
     }
 
 
@@ -130,12 +115,13 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                     mSocket.disconnect();
                                 } else {
                                     final String sToken = res.ret.token;
+                                    DebugUtils.logDebug(TAG, "Token: " + sToken);
                                     mListener.onAuthenticationSuccess(sToken);
                                     SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.TOKEN, sToken);
                                     Application.getInstance().handlerPost(new Runnable() {
                                         @Override
                                         public void run() {
-                                            GoogleLocationUtil.startLocationUpdates(WebSocketService.this);
+                                            GoogleLocationUtil.startLocationUpdates(WebSocketService.this, WebSocketService.this);
                                         }
                                     });
                                 }
@@ -203,7 +189,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         DebugUtils.logDebug(TAG, "disconnecting");
         if (mSocket != null)
             mSocket.disconnect();
-        GoogleLocationUtil.stopLocationUpdates();
+        GoogleLocationUtil.stopLocationUpdates(WebSocketService.this);
     }
 
 

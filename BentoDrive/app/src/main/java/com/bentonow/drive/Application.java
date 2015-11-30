@@ -8,9 +8,6 @@ import android.content.res.Configuration;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.Volley;
-import com.bentonow.drive.listener.InterfaceWebRequest;
 import com.bentonow.drive.util.DebugUtils;
 
 
@@ -19,7 +16,6 @@ public class Application extends android.app.Application {
     private static Application singleton;
     public Handler mHandler = new Handler(Looper.getMainLooper());
     private Thread mThread;
-    private RequestQueue mRequestQueue;
 
     public static Application getInstance() {
         return singleton;
@@ -79,18 +75,4 @@ public class Application extends android.app.Application {
             mThread.interrupt();
     }
 
-    public RequestQueue getVolleyRequest() {
-        if (mRequestQueue == null)
-            mRequestQueue = Volley.newRequestQueue(Application.getInstance());
-        return mRequestQueue;
-    }
-
-    public void webRequest(final InterfaceWebRequest interfaceWebRequest) {
-        doInBackground(new Runnable() {
-            @Override
-            public void run() {
-                interfaceWebRequest.dispatchRequest();
-            }
-        });
-    }
 }

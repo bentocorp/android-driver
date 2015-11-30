@@ -12,19 +12,23 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bentonow.drive.Application;
 import com.bentonow.drive.R;
 import com.bentonow.drive.controller.adapter.OrderListAdapter;
-import com.bentonow.drive.listener.ListenerWebRequest;
+import com.bentonow.drive.dialog.ProgressDialog;
 import com.bentonow.drive.listener.NodeEventsListener;
 import com.bentonow.drive.listener.RecyclerListListener;
+import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.model.OrderItemModel;
+import com.bentonow.drive.parse.jackson.BentoOrderJsonParser;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
-import com.bentonow.drive.web.request.RequestGetAssignedOrders;
-import com.bentonow.drive.widget.OrderDividerItemDecoration;
+import com.bentonow.drive.util.SharedPreferencesUtil;
+import com.bentonow.drive.util.WidgetsUtils;
+import com.bentonow.drive.web.BentoRestClient;
+import com.loopj.android.http.TextHttpResponseHandler;
 
+import org.apache.http.Header;
 import org.bentocorp.api.ws.Push;
 
 import java.util.ArrayList;
@@ -42,10 +46,12 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     private RecyclerView mRecyclerView;
     private OrderListAdapter mAdapter;
 
+    private ProgressDialog mLoaderDialog;
+
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
 
-    private ArrayList<OrderItemModel> aListOder;
+    private ArrayList<OrderItemModel> aListOder = new ArrayList<>();
 
     private boolean mBound = false;
 
@@ -61,38 +67,79 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     }
 
+    private void refreshAssignedList() {
+        for (int a = 0; a < aListOder.size(); a++) {
+            //if (!aListOder.get(a).getStatus().contains("REJECTED"))
+            getListAdapter().aListOrder.add(aListOder.get(a));
+            break;
+        }
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                getListAdapter().notifyDataSetChanged();
+                getTxtEmptyView().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.VISIBLE : View.GONE);
+                getListOrder().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.GONE : View.VISIBLE);
+
+                getLoaderDialog().dismiss();
+            }
+        });
+    }
+
+    private void logInDrive() {
+        if (!webSocketService.isConnectedUser()) {
+            getLoaderDialog().show();
+
+            DebugUtils.logDebug(TAG, "Attempting to connect to node");
+
+            webSocketService.connectWebSocket(SharedPreferencesUtil.getStringPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.USER_NAME),
+                    SharedPreferencesUtil.getStringPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.PASSWORD), new WebSocketEventListener() {
+                        @Override
+                        public void onAuthenticationSuccess(String sToken) {
+                            getAssignedOrders();
+                        }
+
+                        @Override
+                        public void onAuthenticationFailure(String sReason) {
+                            WidgetsUtils.createShortToast("There was a problem: " + sReason);
+                            BentoDriveUtil.disconnectUser(ListOrderAssignedActivity.this);
+                        }
+                    });
+
+        } else {
+            webSocketService.disconnectWebSocket();
+
+        }
+    }
+
     private void getAssignedOrders() {
-        Application.getInstance().webRequest(new RequestGetAssignedOrders(new ListenerWebRequest() {
+
+        BentoRestClient.getAssignedOrders(null, new TextHttpResponseHandler() {
+            @SuppressWarnings("deprecation")
             @Override
-            public void onError(String sError) {
-                super.onError(sError);
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                DebugUtils.logError(TAG, "Code: " + statusCode);
+                DebugUtils.logError(TAG, "Response: " + responseString);
+
+                refreshAssignedList();
             }
 
+            @SuppressWarnings("deprecation")
             @Override
-            public void onResponse(Object oResponse) {
-                aListOder = (ArrayList<OrderItemModel>) oResponse;
-                getListAdapter().aListOrder.clear();
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                try {
+                    aListOder = BentoOrderJsonParser.parseBentoListOrder(responseString);
+                    getListAdapter().aListOrder.clear();
 
-                if (!aListOder.isEmpty())
-                    getListAdapter().aListOrder.add(aListOder.get(0));
+                } catch (Exception ex) {
+                    DebugUtils.logError(TAG, ex);
+                }
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        getListAdapter().notifyDataSetChanged();
-                        getTxtEmptyView().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.VISIBLE : View.GONE);
-                        getListOrder().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.GONE : View.VISIBLE);
-                    }
-                });
-
-                super.onResponse(oResponse);
+                refreshAssignedList();
             }
 
-            @Override
-            public void onComplete() {
-                super.onComplete();
-            }
-        }));
+        });
+
     }
 
     private class WebSocketServiceConnection implements ServiceConnection {
@@ -103,7 +150,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             webSocketService = webSocketServiceBinder.getService();
             webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
             mBound = true;
-            getAssignedOrders();
+            logInDrive();
         }
 
         @Override
@@ -165,6 +212,13 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     }
 
+
+    private ProgressDialog getLoaderDialog() {
+        if (mLoaderDialog == null)
+            mLoaderDialog = new ProgressDialog(ListOrderAssignedActivity.this, "Downloading...");
+        return mLoaderDialog;
+    }
+
     private ImageView getMenuItemLogOut() {
         if (imgMenuItemLogOut == null)
             imgMenuItemLogOut = (ImageView) findViewById(R.id.img_menu_item_log_out);
@@ -182,7 +236,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         if (mRecyclerView == null) {
             mRecyclerView = (RecyclerView) findViewById(R.id.list_assigned_orders);
             mRecyclerView.setLayoutManager(new LinearLayoutManager(ListOrderAssignedActivity.this));
-            mRecyclerView.addItemDecoration(new OrderDividerItemDecoration(ListOrderAssignedActivity.this));
+            //   mRecyclerView.addItemDecoration(new OrderDividerItemDecoration(ListOrderAssignedActivity.this));
         }
         return mRecyclerView;
     }

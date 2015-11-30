@@ -1,21 +1,9 @@
 package com.bentonow.drive.web.request;
 
-import com.android.volley.NetworkResponse;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.HttpHeaderParser;
-import com.bentonow.drive.Application;
 import com.bentonow.drive.listener.InterfaceWebRequest;
 import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.model.OrderItemModel;
-import com.bentonow.drive.model.ResponseModel;
-import com.bentonow.drive.parse.jackson.MainParser;
 import com.bentonow.drive.util.ConstantUtil;
-import com.bentonow.drive.util.DebugUtils;
-import com.bentonow.drive.web.BentoDriveAPI;
-
-import java.util.HashMap;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -37,7 +25,7 @@ public class RequestGetStatusOrders implements InterfaceWebRequest {
     @Override
     public void dispatchRequest() {
 
-        Request request = new Request(Request.Method.GET, BentoDriveAPI.getStatusOrderUrl(optStatusOrder, mOrderModel.getId()), getErrorListener()) {
+       /*  Request request = new Request(Request.Method.GET, BentoDriveAPI.getStatusOrderUrl(optStatusOrder, mOrderModel.getId()), getErrorListener()) {
 
             @Override
             public int compareTo(Object another) {
@@ -83,10 +71,10 @@ public class RequestGetStatusOrders implements InterfaceWebRequest {
 
         request.setTag(TAG);
 
-        Application.getInstance().getVolleyRequest().add(request);
+        Application.getInstance().getVolleyRequest().add(request);*/
     }
 
-    private Response.ErrorListener getErrorListener() {
+   /*  private Response.ErrorListener getErrorListener() {
         return new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
@@ -101,5 +89,5 @@ public class RequestGetStatusOrders implements InterfaceWebRequest {
                 DebugUtils.logDebug(TAG, "Time: " + error.getNetworkTimeMs());
             }
         };
-    }
+    }*/
 }

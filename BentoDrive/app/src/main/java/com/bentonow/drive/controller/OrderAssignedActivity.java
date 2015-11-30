@@ -11,12 +11,11 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bentonow.drive.Application;
 import com.bentonow.drive.R;
 import com.bentonow.drive.dialog.ProgressDialog;
-import com.bentonow.drive.listener.ListenerWebRequest;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.model.ResponseModel;
+import com.bentonow.drive.parse.jackson.MainParser;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
@@ -24,8 +23,11 @@ import com.bentonow.drive.util.ConstantUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SocialNetworksUtil;
 import com.bentonow.drive.util.WidgetsUtils;
-import com.bentonow.drive.web.request.RequestGetStatusOrders;
+import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.ButtonFlat;
+import com.loopj.android.http.TextHttpResponseHandler;
+
+import org.apache.http.Header;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -44,6 +46,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     private ButtonFlat btnArrivedOrder;
 
     private TextView txtOrderContent;
+    private TextView txtStatus;
 
     private ProgressDialog mLoaderDialog;
 
@@ -84,226 +87,258 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 getBtnRejectOrder().setVisibility(View.VISIBLE);
                 getBtnArrivedOrder().setVisibility(View.GONE);
                 getBtnCompleteOrder().setVisibility(View.GONE);
+                getTxtStatus().setVisibility(View.GONE);
                 break;
             case "ACCEPTED":
                 getBtnAcceptOrder().setVisibility(View.GONE);
                 getBtnRejectOrder().setVisibility(View.GONE);
                 getBtnArrivedOrder().setVisibility(View.VISIBLE);
                 getBtnCompleteOrder().setVisibility(View.GONE);
+                getTxtStatus().setVisibility(View.GONE);
                 break;
             case "ARRIVED":
                 getBtnAcceptOrder().setVisibility(View.GONE);
                 getBtnRejectOrder().setVisibility(View.GONE);
                 getBtnArrivedOrder().setVisibility(View.GONE);
                 getBtnCompleteOrder().setVisibility(View.VISIBLE);
+                getTxtStatus().setVisibility(View.GONE);
                 break;
             case "REJECTED":
-                getBtnAcceptOrder().setVisibility(View.VISIBLE);
+                getBtnAcceptOrder().setVisibility(View.GONE);
                 getBtnRejectOrder().setVisibility(View.GONE);
                 getBtnArrivedOrder().setVisibility(View.GONE);
                 getBtnCompleteOrder().setVisibility(View.GONE);
+                getTxtStatus().setVisibility(View.VISIBLE);
                 break;
         }
     }
 
     private void acceptOrder() {
+
         getLoaderDialog().show();
-        Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.ACCEPT, mOrderModel, new ListenerWebRequest() {
+
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ACCEPT, mOrderModel, new TextHttpResponseHandler() {
+            @SuppressWarnings("deprecation")
             @Override
-            public void onError(String sError) {
-                onComplete();
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                DebugUtils.logError(TAG, "Code: " + statusCode);
+                DebugUtils.logError(TAG, "Response: " + responseString);
+
+                dismissDialog();
             }
 
+            @SuppressWarnings("deprecation")
             @Override
-            public void onResponse(Object oResponse) {
-                ResponseModel mResponse = (ResponseModel) oResponse;
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                try {
+                    ResponseModel mResponse = MainParser.getObjectMapper().readValue(responseString, ResponseModel.class);
 
-                switch (mResponse.getCode()) {
-                    case 0:
-                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty())
-                            WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mOrderModel.setStatus("ACCEPTED");
-                                updateUI();
-                            }
-                        });
-                        break;
-                    case 1:
-                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
-                            if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mOrderModel.setStatus("ACCEPTED");
-                                        updateUI();
-                                    }
-                                });
-                            } else
+                    switch (mResponse.getCode()) {
+                        case 0:
+                            if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty())
                                 WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
-                        }
-                        break;
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mOrderModel.setStatus("ACCEPTED");
+                                    updateUI();
+                                }
+                            });
+                            break;
+                        case 1:
+                            if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
+                                if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            mOrderModel.setStatus("ACCEPTED");
+                                            updateUI();
+                                        }
+                                    });
+                                } else
+                                    WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
+                            }
+                            break;
+                    }
+                } catch (Exception ex) {
+                    DebugUtils.logError(TAG, ex);
                 }
 
-                onComplete();
+                dismissDialog();
             }
 
-            @Override
-            public void onComplete() {
-                dismissDialog();
-                super.onComplete();
-            }
-        }));
+        });
 
     }
 
     private void rejectOrder() {
+
         getLoaderDialog().show();
-        Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.REJECT, mOrderModel, new ListenerWebRequest() {
-            @Override
-            public void onError(String sError) {
-                onComplete();
-            }
 
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.REJECT, mOrderModel, new TextHttpResponseHandler() {
+            @SuppressWarnings("deprecation")
             @Override
-            public void onResponse(Object oResponse) {
-                ResponseModel mResponse = (ResponseModel) oResponse;
-                switch (mResponse.getCode()) {
-                    case 0:
-                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty())
-                            WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                DebugUtils.logError(TAG, "Code: " + statusCode);
+                DebugUtils.logError(TAG, "Response: " + responseString);
 
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mOrderModel.setStatus("REJECTED");
-                                updateUI();
-                            }
-                        });
-                        break;
-                    case 1:
-                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
-                            if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mOrderModel.setStatus("REJECTED");
-                                        updateUI();
-                                    }
-                                });
-                            } else
-                                WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
-                        }
-                        break;
-                }
-                onComplete();
-            }
-
-            @Override
-            public void onComplete() {
                 dismissDialog();
-                super.onComplete();
             }
-        }));
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                try {
+                    ResponseModel mResponse = MainParser.getObjectMapper().readValue(responseString, ResponseModel.class);
+
+                    switch (mResponse.getCode()) {
+                        case 0:
+                            if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty())
+                                WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mOrderModel.setStatus("REJECTED");
+                                    updateUI();
+                                }
+                            });
+                            break;
+                        case 1:
+                            if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
+                                if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            mOrderModel.setStatus("REJECTED");
+                                            updateUI();
+                                        }
+                                    });
+                                } else
+                                    WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
+                            }
+                            break;
+                    }
+
+                } catch (Exception ex) {
+                    DebugUtils.logError(TAG, ex);
+                }
+
+                dismissDialog();
+            }
+
+        });
+
     }
 
 
     private void arrivedOrder() {
+
         getLoaderDialog().show();
-        Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.ARRIVED, mOrderModel, new ListenerWebRequest() {
+
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ARRIVED, mOrderModel, new TextHttpResponseHandler() {
+            @SuppressWarnings("deprecation")
             @Override
-            public void onError(String sError) {
-                onComplete();
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                DebugUtils.logError(TAG, "Code: " + statusCode);
+                DebugUtils.logError(TAG, "Response: " + responseString);
+
+                dismissDialog();
             }
 
+            @SuppressWarnings("deprecation")
             @Override
-            public void onResponse(Object oResponse) {
-                ResponseModel mResponse = (ResponseModel) oResponse;
-                switch (mResponse.getCode()) {
-                    case 0:
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mOrderModel.setStatus("ARRIVED");
-                                updateUI();
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                try {
+                    ResponseModel mResponse = MainParser.getObjectMapper().readValue(responseString, ResponseModel.class);
+                    switch (mResponse.getCode()) {
+                        case 0:
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mOrderModel.setStatus("ARRIVED");
+                                    updateUI();
+                                }
+                            });
+                            break;
+                        case 1:
+                            if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
+                                if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            mOrderModel.setStatus("ARRIVED");
+                                            updateUI();
+                                        }
+                                    });
+                                } else
+                                    WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
                             }
-                        });
-                        break;
-                    case 1:
-                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
-                            if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mOrderModel.setStatus("ARRIVED");
-                                        updateUI();
-                                    }
-                                });
-                            } else
-                                WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
-                        }
-                        break;
+                            break;
+                    }
+                } catch (Exception ex) {
+                    DebugUtils.logError(TAG, ex);
                 }
 
-                onComplete();
+                dismissDialog();
             }
 
-            @Override
-            public void onComplete() {
-                dismissDialog();
-                super.onComplete();
-            }
-        }));
+        });
     }
 
     private void completeOrder() {
+
         getLoaderDialog().show();
-        Application.getInstance().webRequest(new RequestGetStatusOrders(ConstantUtil.optStatusOrder.COMPLETE, mOrderModel, new ListenerWebRequest() {
+
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.COMPLETE, mOrderModel, new TextHttpResponseHandler() {
+            @SuppressWarnings("deprecation")
             @Override
-            public void onError(String sError) {
-                onComplete();
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                DebugUtils.logError(TAG, "Code: " + statusCode);
+                DebugUtils.logError(TAG, "Response: " + responseString);
+
+                dismissDialog();
             }
 
+            @SuppressWarnings("deprecation")
             @Override
-            public void onResponse(Object oResponse) {
-                ResponseModel mResponse = (ResponseModel) oResponse;
-                switch (mResponse.getCode()) {
-                    case 0:
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mOrderModel.setStatus("COMPLETED");
-                                onBackPressed();
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                try {
+                    ResponseModel mResponse = MainParser.getObjectMapper().readValue(responseString, ResponseModel.class);
+                    switch (mResponse.getCode()) {
+                        case 0:
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mOrderModel.setStatus("COMPLETED");
+                                    onBackPressed();
+                                }
+                            });
+                            break;
+                        case 1:
+                            if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
+                                if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            mOrderModel.setStatus("COMPLETED");
+                                            onBackPressed();
+                                        }
+                                    });
+                                } else
+                                    WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
                             }
-                        });
-                        break;
-                    case 1:
-                        if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
-                            if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mOrderModel.setStatus("COMPLETED");
-                                        onBackPressed();
-                                    }
-                                });
-                            } else
-                                WidgetsUtils.createShortToast("Error: " + mResponse.getMsg());
-                        }
-                        break;
+                            break;
+                    }
+                } catch (Exception ex) {
+                    DebugUtils.logError(TAG, ex);
                 }
 
-                onComplete();
+                dismissDialog();
             }
 
-            @Override
-            public void onComplete() {
-                dismissDialog();
-                super.onComplete();
-            }
-        }));
+        });
     }
 
     private void dismissDialog() {
@@ -336,7 +371,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         switch (v.getId()) {
             case R.id.container_message:
                 if (mOrderModel != null)
-                    AndroidUtil.sendSms(OrderAssignedActivity.this, mOrderModel.getPhone(), "Message");
+                    AndroidUtil.populateSmsApp(OrderAssignedActivity.this, mOrderModel.getPhone(), String.format(getString(R.string.order_sms_message), mOrderModel.getName()));
                 break;
             case R.id.container_call:
                 if (mOrderModel != null)
@@ -433,6 +468,12 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         if (txtOrderContent == null)
             txtOrderContent = (TextView) findViewById(R.id.txt_order_content);
         return txtOrderContent;
+    }
+
+    private TextView getTxtStatus() {
+        if (txtStatus == null)
+            txtStatus = (TextView) findViewById(R.id.txt_status);
+        return txtStatus;
     }
 
 

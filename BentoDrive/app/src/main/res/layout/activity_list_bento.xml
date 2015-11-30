@@ -10,6 +10,7 @@
         android:id="@+id/list_assigned_orders"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:visibility="gone"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:listitem="@layout/list_item_order_bento" />
 
@@ -18,8 +19,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        android:text="No assiged Orders for you"
-        android:visibility="gone" />
+        android:text="No assiged Orders for you" />
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/appbar"
