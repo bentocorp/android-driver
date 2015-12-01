@@ -116,8 +116,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                 } else {
                                     final String sToken = res.ret.token;
                                     DebugUtils.logDebug(TAG, "Token: " + sToken);
-                                    mListener.onAuthenticationSuccess(sToken);
                                     SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.TOKEN, sToken);
+                                    mListener.onAuthenticationSuccess(sToken);
                                     Application.getInstance().handlerPost(new Runnable() {
                                         @Override
                                         public void run() {

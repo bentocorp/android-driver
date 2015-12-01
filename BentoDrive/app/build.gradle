@@ -22,11 +22,11 @@ android {
     productFlavors {
         production {
             applicationId "com.bentonow.drive"
-            versionName '1.0-beta1'
+            versionName '1.0-beta2'
         }
         stage {
             applicationId "com.bentonow.drive.stage"
-            versionName '1.0-beta1-dev'
+            versionName '1.0-beta2-dev'
         }
     }
 
