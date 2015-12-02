@@ -18,6 +18,7 @@ import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
+import com.bentonow.drive.widget.material.DialogMaterial;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -38,6 +39,8 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
     private boolean mBound = false;
     private boolean bAlreadyOpen = false;
 
+    private DialogMaterial mDialogMaterial;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,10 +54,22 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
         getBtnLogIn().setOnClickListener(this);
     }
 
+    private boolean isValidField() {
+        boolean bIsValid = true;
+
+        if (getEditUsername().getText().toString().isEmpty() || getEditPassword().getText().toString().isEmpty()) {
+            bIsValid = false;
+            mDialogMaterial = new DialogMaterial(LogInActivity.this, "Error", getString(R.string.dialog_msg_login_empty));
+            mDialogMaterial.addAcceptButton("OK");
+            mDialogMaterial.show();
+        }
+
+        return bIsValid;
+    }
+
     private void logInDrive() {
         if (mBound) {
-            boolean bIsConnected = webSocketService.isConnectedUser();
-            if (!bIsConnected) {
+            if (!webSocketService.isConnectedUser()) {
                 getLoaderDialog().show();
 
                 DebugUtils.logDebug(TAG, "Attempting to connect to node");
@@ -62,10 +77,12 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
                 webSocketService.connectWebSocket(getEditUsername().getText().toString(), getEditPassword().getText().toString(), new WebSocketEventListener() {
                     @Override
                     public void onAuthenticationSuccess(String sToken) {
+
                         if (!bAlreadyOpen) {
                             SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
                             SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
                             DebugUtils.logDebug(TAG, "Token: " + sToken);
+                            hideDialogs();
 
                             BentoDriveUtil.openListBentoActivity(LogInActivity.this);
 
@@ -76,9 +93,22 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
 
                     @Override
                     public void onAuthenticationFailure(String sReason) {
-                        getLoaderDialog().dismiss();
-                        WidgetsUtils.createShortToast("There was a problem: " + sReason);
+                        hideDialogs();
+
+                        if (sReason.contains("database query came back empty"))
+                            WidgetsUtils.createShortToast(R.string.error_failed_authenticate);
+                        else
+                            WidgetsUtils.createShortToast("There was a problem: " + sReason);
+
                         bAlreadyOpen = false;
+                    }
+
+                    @Override
+                    public void onDisconnect(boolean disconnectingPurposefully) {
+                        hideDialogs();
+
+                        if (!disconnectingPurposefully)
+                            WidgetsUtils.createShortToast(R.string.error_node_connection);
                     }
                 });
 
@@ -87,6 +117,15 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
 
             }
         }
+    }
+
+    private void hideDialogs() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                getLoaderDialog().dismiss();
+            }
+        });
     }
 
     private class WebSocketServiceConnection implements ServiceConnection {
@@ -109,7 +148,8 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_login:
-                logInDrive();
+                if (isValidField())
+                    logInDrive();
                 break;
             default:
                 DebugUtils.logError(TAG, "OnClick(): " + v.getId());

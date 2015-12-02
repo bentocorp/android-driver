@@ -100,6 +100,11 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         });
     }
 
+    private void setNodeListener() {
+        webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
+        getAssignedOrders();
+    }
+
     private void logInDrive() {
         if (!webSocketService.isConnectedUser()) {
             DebugUtils.logDebug(TAG, "Attempting to connect to node");
@@ -108,8 +113,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                     SharedPreferencesUtil.getStringPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.PASSWORD), new WebSocketEventListener() {
                         @Override
                         public void onAuthenticationSuccess(String sToken) {
-                            webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
-                            getAssignedOrders();
+                            setNodeListener();
                         }
 
                         @Override
@@ -120,8 +124,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                     });
 
         } else {
-            webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
-            getAssignedOrders();
+            setNodeListener();
         }
     }
 
@@ -220,10 +223,11 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                         ArrayList<OrderItemModel> aTempListOder = new ArrayList<>();
 
                         for (int a = 0; a < aListOder.size(); a++) {
-                            if (aListOder.get(a).getId().equals(mOrder.getAfter())) {
+                            if (aListOder.get(a).getId().equals(mOrder.getAfter()))
                                 aTempListOder.add(mOrder);
-                            }
-                            aTempListOder.add(aListOder.get(a));
+
+                            if (!aListOder.get(a).getId().equals(mOrder.getId()))
+                                aTempListOder.add(aListOder.get(a));
                         }
                         aListOder = (ArrayList<OrderItemModel>) aTempListOder.clone();
                     }

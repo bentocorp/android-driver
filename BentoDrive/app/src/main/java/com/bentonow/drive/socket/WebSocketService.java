@@ -50,10 +50,10 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     private boolean connecting = false;
     private boolean disconnectingPurposefully = false;
 
+    private int iMaxConnect;
 
     @Override
     public void onCreate() {
-
         DebugUtils.logDebug(TAG, "creating new WebSocketService");
     }
 
@@ -66,6 +66,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         } else {
             try {
                 connecting = true;
+                iMaxConnect = 0;
 
                 SSLContext sc = SSLContext.getInstance("TLS");
                 sc.init(null, trustAllCerts, new SecureRandom());
@@ -79,11 +80,13 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
                 IO.Options opts = new IO.Options();
 
-                opts.port = 8081;
+                opts.port = 8443;
                 opts.forceNew = true;
                 opts.secure = true;
                 opts.sslContext = sc;
                 opts.hostnameVerifier = new RelaxedHostNameVerifier();
+                opts.reconnectionDelay = 500;
+                opts.timeout = 5000;
 
                 //opts.timeout = 5000;
                 mSocket = IO.socket(BentoDriveAPI.getNodeUrl(WebSocketService.this), opts);
@@ -145,9 +148,17 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         mSocket.on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener() {
             @Override
             public void call(Object[] args) {
-                mListener.onConnectionError(args[0].toString());
-                DebugUtils.logError(TAG, "connection-error" + args[0].toString());
-                // occurs if the server goes down to automatically reconnect, do not disconnect here
+                DebugUtils.logError(TAG, "connection-error: " + args[0].toString());
+
+                if (iMaxConnect == 3) {
+                    mSocket.disconnect();
+                    connecting = false;
+                    mListener.onDisconnect(disconnectingPurposefully);
+                } else {
+                    mListener.onConnectionError(args[0].toString());
+                    iMaxConnect++;
+                }
+
             }
         });
         mSocket.on(Socket.EVENT_CONNECT_TIMEOUT, new Emitter.Listener() {
@@ -163,7 +174,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             public void call(Object[] args) {
                 connecting = false;
                 mListener.onDisconnect(disconnectingPurposefully);
-
                 //disconnectingPurposefully = false;
             }
         });
