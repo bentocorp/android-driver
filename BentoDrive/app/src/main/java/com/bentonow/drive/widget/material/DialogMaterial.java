@@ -50,6 +50,11 @@ public class DialogMaterial extends android.app.Dialog {
         this.buttonAcceptText = buttonAcceptText;
     }
 
+    public void addAcceptButton(String buttonAcceptText, View.OnClickListener onAcceptButtonClickListener) {
+        this.buttonAcceptText = buttonAcceptText;
+        this.onAcceptButtonClickListener = onAcceptButtonClickListener;
+    }
+
     public void addCancelButton(String buttonCancelText, View.OnClickListener onCancelButtonClickListener) {
         this.buttonCancelText = buttonCancelText;
         this.onCancelButtonClickListener = onCancelButtonClickListener;

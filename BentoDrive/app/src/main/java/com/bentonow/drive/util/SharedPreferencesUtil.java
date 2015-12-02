@@ -16,14 +16,7 @@ public class SharedPreferencesUtil {
     public static final String USER_NAME = "USER_NAME"; //String
     public static final String PASSWORD = "PASSWORD"; //String
     public static final String TOKEN = "TOKEN"; //String
-    public static final String LOCATION = "location"; //String
-    public static final String ADDRESS = "address"; //String
-    public static final String BACKENDTEXT = "backendText"; //String
-    public static final String UUID_BENTO = "UUID_BENTO"; //String
-    public static final String IS_BENTO_SERVICE_RUNNING = "IS_BENTO_SERVICE_RUNNING"; //boolean
-    public static final String IS_STORE_CHANGIN = "IS_STORE_CHANGIN"; //boolean
-    public static final String IS_ORDER_SOLD_OUT = "IS_ORDER_SOLD_OUT"; //boolean
-    public static final String IS_APP_IN_FRONT = "IS_THE_APP_IN_FRONT"; //boolean
+    public static final String USE_SAVED_SETTINGS = "USE_SAVED_SETTINGS"; //boolean
 
 
     /**

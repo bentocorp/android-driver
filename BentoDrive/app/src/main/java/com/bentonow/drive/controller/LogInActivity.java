@@ -49,6 +49,9 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
         if (BentoDriveUtil.bIsKokushoTesting) {
             getEditUsername().setText("jose.torres@gmail.com");
             getEditPassword().setText("bento");
+        } else if (SharedPreferencesUtil.getBooleanPreference(LogInActivity.this, SharedPreferencesUtil.USE_SAVED_SETTINGS)) {
+            getEditUsername().setText(SharedPreferencesUtil.getStringPreference(LogInActivity.this, SharedPreferencesUtil.USER_NAME));
+            getEditPassword().setText(SharedPreferencesUtil.getStringPreference(LogInActivity.this, SharedPreferencesUtil.PASSWORD));
         }
 
         getBtnLogIn().setOnClickListener(this);

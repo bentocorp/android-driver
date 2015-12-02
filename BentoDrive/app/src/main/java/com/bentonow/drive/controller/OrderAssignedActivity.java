@@ -28,6 +28,7 @@ import com.bentonow.drive.util.SocialNetworksUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.ButtonFlat;
+import com.bentonow.drive.widget.material.DialogMaterial;
 import com.loopj.android.http.TextHttpResponseHandler;
 
 import org.apache.http.Header;
@@ -43,6 +44,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     private FrameLayout mContainerMessage;
     private FrameLayout mContainerCall;
     private FrameLayout mContainerMap;
+    private FrameLayout mContainerBack;
     private ButtonFlat btnAcceptOrder;
     private ButtonFlat btnRejectOrder;
     private ButtonFlat btnCompleteOrder;
@@ -70,6 +72,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         getContainerMessage().setOnClickListener(this);
         getContainerCall().setOnClickListener(this);
         getContainerMap().setOnClickListener(this);
+        getContainerBack().setOnClickListener(this);
 
         getBtnAcceptOrder().setOnClickListener(this);
         getBtnRejectOrder().setOnClickListener(this);
@@ -117,6 +120,10 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     }
 
 
+    private void setNodeListener() {
+        webSocketService.onNodeEventListener(OrderAssignedActivity.this);
+    }
+
     private void logInDrive() {
         if (!webSocketService.isConnectedUser()) {
             getLoaderDialog().show();
@@ -127,19 +134,18 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                     SharedPreferencesUtil.getStringPreference(OrderAssignedActivity.this, SharedPreferencesUtil.PASSWORD), new WebSocketEventListener() {
                         @Override
                         public void onAuthenticationSuccess(String sToken) {
-                            webSocketService.onNodeEventListener(OrderAssignedActivity.this);
+                            setNodeListener();
                         }
 
                         @Override
                         public void onAuthenticationFailure(String sReason) {
                             WidgetsUtils.createShortToast("There was a problem: " + sReason);
-                            BentoDriveUtil.disconnectUser(OrderAssignedActivity.this);
+                            BentoDriveUtil.disconnectUser(OrderAssignedActivity.this, false);
                         }
                     });
 
         } else {
-            webSocketService.disconnectWebSocket();
-
+            setNodeListener();
         }
     }
 
@@ -401,7 +407,21 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     @Override
     public void onPush(OrderItemModel mOrderModel) {
-        //  DebugUtils.logDebug(TAG, "Push: " + mPush.body.toString());
+
+        switch (mOrderModel.getOrderType()) {
+            case "ASSIGN":
+
+                break;
+            case "UNASSIGN":
+
+                break;
+            case "REPRIORITIZE":
+
+                break;
+            default:
+                DebugUtils.logDebug(TAG, "OrderType: Unhandled " + mOrderModel.getOrderType());
+                break;
+        }
     }
 
     @Override
@@ -420,7 +440,15 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                     SocialNetworksUtil.openWazeLocation(OrderAssignedActivity.this, mOrderModel.getAddress().getLat(), mOrderModel.getAddress().getLng());
                 break;
             case R.id.btn_accept_order:
-                acceptOrder();
+                DialogMaterial mDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
+                mDialog.addCancelButton("Cancel");
+                mDialog.addAcceptButton("Accept", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        acceptOrder();
+                    }
+                });
+                mDialog.show();
                 break;
             case R.id.btn_reject_order:
                 rejectOrder();
@@ -431,10 +459,21 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
             case R.id.btn_complete_order:
                 completeOrder();
                 break;
+            case R.id.container_back:
+                onBackPressed();
+                break;
             default:
                 DebugUtils.logError(TAG, "OnClick(): " + v.getId());
                 break;
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        Intent mIntent = new Intent();
+        mIntent.putExtra(OrderItemModel.TAG, mOrderModel);
+        setResult(RESULT_OK, mIntent);
+        super.onBackPressed();
     }
 
     @Override
@@ -475,6 +514,12 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         if (mContainerMap == null)
             mContainerMap = (FrameLayout) findViewById(R.id.container_map);
         return mContainerMap;
+    }
+
+    private FrameLayout getContainerBack() {
+        if (mContainerBack == null)
+            mContainerBack = (FrameLayout) findViewById(R.id.container_back);
+        return mContainerBack;
     }
 
     private ButtonFlat getBtnAcceptOrder() {

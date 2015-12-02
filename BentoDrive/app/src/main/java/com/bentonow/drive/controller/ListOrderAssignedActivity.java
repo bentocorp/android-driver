@@ -26,6 +26,7 @@ import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoRestClient;
+import com.bentonow.drive.widget.material.DialogMaterial;
 import com.loopj.android.http.TextHttpResponseHandler;
 
 import org.apache.http.Header;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 public class ListOrderAssignedActivity extends MainActivity implements View.OnClickListener, RecyclerListListener, NodeEventsListener {
 
     public static final String TAG = "ListOrderAssignedActivity";
+    public static final int TAG_ID = 2;
 
     private ImageView imgMenuItemLogOut;
     private TextView txtEmptyView;
@@ -77,7 +79,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         getListAdapter().aListOrder.clear();
 
         for (int a = 0; a < aListOder.size(); a++) {
-            //if (!aListOder.get(a).getStatus().contains("REJECTED"))
             mCurrentOrder = aListOder.get(a);
             getListAdapter().aListOrder.add(mCurrentOrder);
             break;
@@ -102,7 +103,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     private void setNodeListener() {
         webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
-        getAssignedOrders();
     }
 
     private void logInDrive() {
@@ -114,17 +114,31 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                         @Override
                         public void onAuthenticationSuccess(String sToken) {
                             setNodeListener();
+                            getAssignedOrders();
                         }
 
                         @Override
                         public void onAuthenticationFailure(String sReason) {
                             WidgetsUtils.createShortToast("There was a problem: " + sReason);
-                            BentoDriveUtil.disconnectUser(ListOrderAssignedActivity.this);
+                            BentoDriveUtil.disconnectUser(ListOrderAssignedActivity.this, false);
+                        }
+
+
+                        @Override
+                        public void onDisconnect(boolean disconnectingPurposefully) {
+                            if (!disconnectingPurposefully) {
+                                WidgetsUtils.createShortToast(R.string.error_node_connection);
+                                aListOder.clear();
+                                setNodeListener();
+                            }
                         }
                     });
 
         } else {
             setNodeListener();
+
+            if (mIsFirstTime)
+                getAssignedOrders();
         }
     }
 
@@ -246,8 +260,23 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.img_menu_item_log_out:
-                webSocketService.disconnectWebSocket();
-                BentoDriveUtil.disconnectUser(ListOrderAssignedActivity.this);
+                DialogMaterial mDialog = new DialogMaterial(ListOrderAssignedActivity.this, getString(R.string.dialog_title_log_out), getString(R.string.dialog_msg_log_out));
+                mDialog.addAcceptButton("Yes");
+                mDialog.setOnAcceptButtonClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        webSocketService.disconnectWebSocket();
+                        BentoDriveUtil.disconnectUser(ListOrderAssignedActivity.this, true);
+                    }
+                });
+                mDialog.addCancelButton("No", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        webSocketService.disconnectWebSocket();
+                        BentoDriveUtil.disconnectUser(ListOrderAssignedActivity.this, false);
+                    }
+                });
+                mDialog.show();
                 break;
             default:
                 DebugUtils.logError(TAG, "OnClick(): " + v.getId());
@@ -260,7 +289,27 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     public void OnItemClickListener(int iPosition) {
         Intent mIntentOrder = new Intent(ListOrderAssignedActivity.this, OrderAssignedActivity.class);
         mIntentOrder.putExtra(OrderItemModel.TAG, getListAdapter().aListOrder.get(iPosition));
-        startActivity(mIntentOrder);
+        startActivityForResult(mIntentOrder, TAG_ID);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == TAG_ID) {
+            if (resultCode == RESULT_OK) {
+                OrderItemModel mRetrieveItem = data.getParcelableExtra(OrderItemModel.TAG);
+                DebugUtils.logDebug(TAG, "New order Id: " + mRetrieveItem.getId() + " Status: " + mRetrieveItem.getStatus());
+
+                if (!aListOder.isEmpty()) {
+                    if (mRetrieveItem.getStatus().contains("COMPLETED"))
+                        aListOder.remove(0);
+                    else
+                        aListOder.set(0, mRetrieveItem);
+                }
+                
+                refreshAssignedList();
+            }
+        }
     }
 
     @Override
@@ -282,8 +331,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     @Override
     protected void onResume() {
         super.onResume();
-
-
     }
 
 

@@ -149,15 +149,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             @Override
             public void call(Object[] args) {
                 DebugUtils.logError(TAG, "connection-error: " + args[0].toString());
-
-                if (iMaxConnect == 3) {
-                    mSocket.disconnect();
-                    connecting = false;
-                    mListener.onDisconnect(disconnectingPurposefully);
-                } else {
-                    mListener.onConnectionError(args[0].toString());
-                    iMaxConnect++;
-                }
+                mListener.onConnectionError(args[0].toString());
 
             }
         });

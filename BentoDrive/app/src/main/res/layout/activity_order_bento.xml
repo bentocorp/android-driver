@@ -19,14 +19,27 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <FrameLayout
+                android:id="@+id/container_back"
+                android:layout_width="48dp"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="@dimen/margin_menu_item"
+                android:layout_marginTop="@dimen/margin_menu_item">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_action_navigation_arrow_back" />
+            </FrameLayout>
+
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
                 android:layout_toLeftOf="@+id/linearLayout"
                 android:orientation="vertical"
-                android:weightSum="2">
+                android:weightSum="2"
+                android:layout_toRightOf="@+id/container_back"
+                android:layout_toEndOf="@+id/container_back">
 
                 <TextView
                     style="@style/TxtToolbarTitle"

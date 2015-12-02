@@ -39,8 +39,8 @@ public class BentoDriveUtil {
         return bIsUserConnected;
     }
 
-    public static void disconnectUser(Context ctx) {
-        SharedPreferencesUtil.clearAllPreferences(ctx);
+    public static void disconnectUser(Context ctx, boolean bSaveSettings) {
+        SharedPreferencesUtil.setAppPreference(ctx, SharedPreferencesUtil.USE_SAVED_SETTINGS, bSaveSettings);
         openLogInActivity(ctx);
     }
 
