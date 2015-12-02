@@ -29,7 +29,6 @@ import com.bentonow.drive.web.BentoRestClient;
 import com.loopj.android.http.TextHttpResponseHandler;
 
 import org.apache.http.Header;
-import org.bentocorp.api.ws.Push;
 
 import java.util.ArrayList;
 
@@ -53,7 +52,11 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     private ArrayList<OrderItemModel> aListOder = new ArrayList<>();
 
+    private OrderItemModel mCurrentOrder;
+
     private boolean mBound = false;
+
+    private boolean mIsFirstTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,15 +67,23 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
         getListOrder().setAdapter(getListAdapter());
 
+        getLoaderDialog().show();
+
+        mIsFirstTime = true;
 
     }
 
     private void refreshAssignedList() {
+        getListAdapter().aListOrder.clear();
+
         for (int a = 0; a < aListOder.size(); a++) {
             //if (!aListOder.get(a).getStatus().contains("REJECTED"))
-            getListAdapter().aListOrder.add(aListOder.get(a));
+            mCurrentOrder = aListOder.get(a);
+            getListAdapter().aListOrder.add(mCurrentOrder);
             break;
         }
+
+        DebugUtils.logDebug(TAG, "Total Orders: " + aListOder.size());
 
         runOnUiThread(new Runnable() {
             @Override
@@ -81,21 +92,23 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                 getTxtEmptyView().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.VISIBLE : View.GONE);
                 getListOrder().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.GONE : View.VISIBLE);
 
-                getLoaderDialog().dismiss();
+                if (mIsFirstTime) {
+                    getLoaderDialog().dismiss();
+                    mIsFirstTime = false;
+                }
             }
         });
     }
 
     private void logInDrive() {
         if (!webSocketService.isConnectedUser()) {
-            getLoaderDialog().show();
-
             DebugUtils.logDebug(TAG, "Attempting to connect to node");
 
             webSocketService.connectWebSocket(SharedPreferencesUtil.getStringPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.USER_NAME),
                     SharedPreferencesUtil.getStringPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.PASSWORD), new WebSocketEventListener() {
                         @Override
                         public void onAuthenticationSuccess(String sToken) {
+                            webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
                             getAssignedOrders();
                         }
 
@@ -107,8 +120,8 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                     });
 
         } else {
-            webSocketService.disconnectWebSocket();
-
+            webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
+            getAssignedOrders();
         }
     }
 
@@ -128,8 +141,8 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             @Override
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
                 try {
+                    DebugUtils.logDebug(TAG, "Order: " + responseString);
                     aListOder = BentoOrderJsonParser.parseBentoListOrder(responseString);
-                    getListAdapter().aListOrder.clear();
 
                 } catch (Exception ex) {
                     DebugUtils.logError(TAG, ex);
@@ -148,7 +161,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
             WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
             webSocketService = webSocketServiceBinder.getService();
-            webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
             mBound = true;
             logInDrive();
         }
@@ -156,16 +168,74 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         @Override
         public void onServiceDisconnected(ComponentName name) {
             DebugUtils.logDebug(TAG, "Disconnected from service " + name);
-            mBound = true;
+            mBound = false;
         }
 
     }
 
 
     @Override
-    public void onPush(Push mPush) {
-        DebugUtils.logDebug(TAG, "Push: " + mPush.body.toString());
-        getAssignedOrders();
+    public void onPush(OrderItemModel mOrder) {
+
+        switch (mOrder.getOrderType()) {
+            case "ASSIGN":
+                if (aListOder.isEmpty()) {
+                    aListOder.add(mOrder);
+                } else {
+                    //  DebugUtils.logDebug(TAG, "CurrentId: " + mCurrentOrder.getId() + " AfterId: " + mOrder.getAfter());
+                    if (mOrder.getAfter().isEmpty())
+                        aListOder.add(mOrder);
+                    else {
+                        ArrayList<OrderItemModel> aTempListOder = new ArrayList<>();
+
+                        for (int a = 0; a < aListOder.size(); a++) {
+                            if (aListOder.get(a).getId().equals(mOrder.getAfter())) {
+                                aTempListOder.add(mOrder);
+                            }
+                            aTempListOder.add(aListOder.get(a));
+                        }
+                        aListOder = (ArrayList<OrderItemModel>) aTempListOder.clone();
+                    }
+
+                }
+
+                refreshAssignedList();
+                break;
+            case "UNASSIGN":
+                for (int a = 0; a < aListOder.size(); a++)
+                    if (aListOder.get(a).getId().equals(mOrder.getId())) {
+                        aListOder.remove(a);
+                        break;
+                    }
+
+                refreshAssignedList();
+                break;
+            case "REPRIORITIZE":
+                if (aListOder.isEmpty()) {
+                    aListOder.add(mOrder);
+                } else {
+                    if (mOrder.getAfter().isEmpty())
+                        aListOder.add(mOrder);
+                    else {
+                        ArrayList<OrderItemModel> aTempListOder = new ArrayList<>();
+
+                        for (int a = 0; a < aListOder.size(); a++) {
+                            if (aListOder.get(a).getId().equals(mOrder.getAfter())) {
+                                aTempListOder.add(mOrder);
+                            }
+                            aTempListOder.add(aListOder.get(a));
+                        }
+                        aListOder = (ArrayList<OrderItemModel>) aTempListOder.clone();
+                    }
+
+                }
+
+                refreshAssignedList();
+                break;
+            default:
+                DebugUtils.logDebug(TAG, "OrderType: Unhandled " + mOrder.getOrderType());
+                break;
+        }
     }
 
     @Override

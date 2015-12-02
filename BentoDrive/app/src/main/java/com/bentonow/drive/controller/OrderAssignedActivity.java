@@ -13,6 +13,8 @@ import android.widget.TextView;
 
 import com.bentonow.drive.R;
 import com.bentonow.drive.dialog.ProgressDialog;
+import com.bentonow.drive.listener.NodeEventsListener;
+import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.model.ResponseModel;
 import com.bentonow.drive.parse.jackson.MainParser;
@@ -21,6 +23,7 @@ import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.ConstantUtil;
 import com.bentonow.drive.util.DebugUtils;
+import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.SocialNetworksUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoRestClient;
@@ -32,9 +35,9 @@ import org.apache.http.Header;
 /**
  * Created by Jose Torres on 11/10/15.
  */
-public class OrderAssignedActivity extends MainActivity implements View.OnClickListener {
+public class OrderAssignedActivity extends MainActivity implements View.OnClickListener, NodeEventsListener {
 
-    public static final String TAG = "ListOrderAssignedActivity";
+    public static final String TAG = "OrderAssignedActivity";
 
     private ImageView imgMenuItemLogOut;
     private FrameLayout mContainerMessage;
@@ -110,6 +113,33 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 getBtnCompleteOrder().setVisibility(View.GONE);
                 getTxtStatus().setVisibility(View.VISIBLE);
                 break;
+        }
+    }
+
+
+    private void logInDrive() {
+        if (!webSocketService.isConnectedUser()) {
+            getLoaderDialog().show();
+
+            DebugUtils.logDebug(TAG, "Attempting to connect to node");
+
+            webSocketService.connectWebSocket(SharedPreferencesUtil.getStringPreference(OrderAssignedActivity.this, SharedPreferencesUtil.USER_NAME),
+                    SharedPreferencesUtil.getStringPreference(OrderAssignedActivity.this, SharedPreferencesUtil.PASSWORD), new WebSocketEventListener() {
+                        @Override
+                        public void onAuthenticationSuccess(String sToken) {
+                            webSocketService.onNodeEventListener(OrderAssignedActivity.this);
+                        }
+
+                        @Override
+                        public void onAuthenticationFailure(String sReason) {
+                            WidgetsUtils.createShortToast("There was a problem: " + sReason);
+                            BentoDriveUtil.disconnectUser(OrderAssignedActivity.this);
+                        }
+                    });
+
+        } else {
+            webSocketService.disconnectWebSocket();
+
         }
     }
 
@@ -350,6 +380,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         });
     }
 
+
     private class WebSocketServiceConnection implements ServiceConnection {
         @Override
         public void onServiceConnected(ComponentName name, IBinder binder) {
@@ -357,6 +388,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
             WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
             webSocketService = webSocketServiceBinder.getService();
             mBound = true;
+            logInDrive();
         }
 
         @Override
@@ -364,6 +396,12 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
             DebugUtils.logDebug(TAG, "Disconnected from service " + name);
             mBound = true;
         }
+    }
+
+
+    @Override
+    public void onPush(OrderItemModel mOrderModel) {
+        //  DebugUtils.logDebug(TAG, "Push: " + mPush.body.toString());
     }
 
     @Override

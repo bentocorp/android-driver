@@ -38,6 +38,8 @@ public class MainParser {
     public static final String TAG_ORDERSTRING = "orderString";
     public static final String TAG_DRIVERID = "driverId";
     public static final String TAG_STATUS = "status";
+    public static final String TAG_AFTER = "after";
+    public static final String TAG_ORDER = "order";
 
 //	public static final String TAG_= "";
 //	public static final String TAG_= "";

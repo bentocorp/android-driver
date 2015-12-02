@@ -10,42 +10,45 @@ public class OrderItemModel implements Parcelable {
 
     public static final String TAG = "OrderItemModel";
 
-    private int orderType;
+    private String orderType = "";
     private String id = "";
     private String name = "";
     private String phone = "";
     private Address address = new Address();
     private String item = "";
     private int key;
-    private int driverId;
+    private String driverId = "";
     private String status = "";
+    private String after = "";
 
     public OrderItemModel() {
     }
 
     public OrderItemModel(Parcel parcel) {
-        orderType = parcel.readInt();
+        orderType = parcel.readString();
         id = parcel.readString();
         name = parcel.readString();
         phone = parcel.readString();
         address = parcel.readParcelable(Address.class.getClassLoader());
         item = parcel.readString();
         key = parcel.readInt();
-        driverId = parcel.readInt();
+        driverId = parcel.readString();
         status = parcel.readString();
+        after = parcel.readString();
     }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(orderType);
+        dest.writeString(orderType);
         dest.writeString(id);
         dest.writeString(name);
         dest.writeString(phone);
         dest.writeParcelable(address, flags);
         dest.writeString(item);
         dest.writeInt(key);
-        dest.writeInt(driverId);
+        dest.writeString(driverId);
         dest.writeString(status);
+        dest.writeString(after);
     }
 
     @Override
@@ -116,11 +119,11 @@ public class OrderItemModel implements Parcelable {
         this.key = key;
     }
 
-    public int getDriverId() {
+    public String getDriverId() {
         return driverId;
     }
 
-    public void setDriverId(int driverId) {
+    public void setDriverId(String driverId) {
         this.driverId = driverId;
     }
 
@@ -132,11 +135,19 @@ public class OrderItemModel implements Parcelable {
         this.status = status;
     }
 
-    public int getOrderType() {
+    public String getOrderType() {
         return orderType;
     }
 
-    public void setOrderType(int orderType) {
+    public void setOrderType(String orderType) {
         this.orderType = orderType;
+    }
+
+    public String getAfter() {
+        return after;
+    }
+
+    public void setAfter(String after) {
+        this.after = after;
     }
 }

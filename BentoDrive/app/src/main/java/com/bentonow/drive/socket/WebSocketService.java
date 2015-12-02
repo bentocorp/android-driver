@@ -10,7 +10,10 @@ import com.bentonow.drive.Application;
 import com.bentonow.drive.listener.NodeEventsListener;
 import com.bentonow.drive.listener.UpdateLocationListener;
 import com.bentonow.drive.listener.WebSocketEventListener;
+import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.model.SocketResponseModel;
+import com.bentonow.drive.parse.jackson.BentoOrderJsonParser;
+import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.GoogleLocationUtil;
 import com.bentonow.drive.util.SharedPreferencesUtil;
@@ -20,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.bentocorp.api.APIResponse;
 import org.bentocorp.api.Authenticate;
-import org.bentocorp.api.ws.Push;
 
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -51,6 +53,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
     @Override
     public void onCreate() {
+
         DebugUtils.logDebug(TAG, "creating new WebSocketService");
     }
 
@@ -168,27 +171,44 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
     public void onNodeEventListener(final NodeEventsListener mListener) {
         if (mSocket != null && mListener != null) {
-            mSocket.off("push");
+            DebugUtils.logDebug(TAG, "Push: Subscribed");
             mSocket.on("push", new Emitter.Listener() {
                 @Override
                 public void call(Object[] args) {
                     try {
-                        //  DebugUtils.logDebug(TAG, "push: " + args[0].toString());
-                        Push push = mapper.readValue(args[0].toString(), Push.class);
-                        mListener.onPush(push);
+                        DebugUtils.logDebug(TAG, "Push: " + args[0].toString());
+                        OrderItemModel mOrder = BentoOrderJsonParser.parseBentoOrderItem(args[0].toString());
+                        //  Push push = mapper.readValue(args[0].toString(), Push.class);
+                        mListener.onPush(mOrder);
                     } catch (Exception e) {
-                        DebugUtils.logError(TAG, "push: " + e.toString());
+                        DebugUtils.logError(TAG, "Push: " + e.toString());
                     }
                 }
             });
+
+            if (BentoDriveUtil.bIsKokushoTesting) {
+                DebugUtils.logDebug(TAG, "Pong: Subscribed");
+                mSocket.on("pong", new Emitter.Listener() {
+                    @Override
+                    public void call(Object[] args) {
+                        try {
+                            DebugUtils.logDebug(TAG, "Pong: " + args[0].toString());
+                        } catch (Exception e) {
+                            DebugUtils.logError(TAG, "Pong: " + e.toString());
+                        }
+                    }
+                });
+            }
         }
     }
 
+
     public void disconnectWebSocket() {
         disconnectingPurposefully = true;
-        DebugUtils.logDebug(TAG, "disconnecting");
-        if (mSocket != null)
+        if (mSocket != null) {
+            DebugUtils.logDebug(TAG, "disconnecting");
             mSocket.disconnect();
+        }
         GoogleLocationUtil.stopLocationUpdates(WebSocketService.this);
     }
 

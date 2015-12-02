@@ -14,7 +14,7 @@ import com.bentonow.drive.util.DebugUtils;
 public class Application extends android.app.Application {
 
     private static Application singleton;
-    public Handler mHandler = new Handler(Looper.getMainLooper());
+    public Handler mHandler;
     private Thread mThread;
 
     public static Application getInstance() {
@@ -51,13 +51,20 @@ public class Application extends android.app.Application {
         new Thread(runnable).start();
     }
 
+    public Handler getHandler() {
+        if (mHandler == null)
+            mHandler = new Handler(Looper.getMainLooper());
+
+        return mHandler;
+    }
+
 
     public void handlerPost(Runnable runnable) {
-        mHandler.post(runnable);
+        getHandler().post(runnable);
     }
 
     public void handlerDelayPost(Runnable runnable, long delay) {
-        mHandler.postDelayed(runnable, delay);
+        getHandler().postDelayed(runnable, delay);
     }
 
     public void runThread(Runnable runnable) {
@@ -67,7 +74,7 @@ public class Application extends android.app.Application {
     }
 
     public void cancelRunOnUIThread(Runnable runnable) {
-        mHandler.removeCallbacks(runnable);
+        getHandler().removeCallbacks(runnable);
     }
 
     public void stopThreads() {

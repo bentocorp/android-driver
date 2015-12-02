@@ -67,7 +67,7 @@ public class OrderListAdapter extends RecyclerView.Adapter<ItemOrderWrapper> {
                 viewHolder.getImgOrderStatus().setImageDrawable(mActivity.getResources().getDrawable(R.drawable.circle_yellow));
                 break;
             case "ACCEPTED":
-                viewHolder.getImgOrderStatus().setImageDrawable(mActivity.getResources().getDrawable(R.drawable.circle_green));
+                viewHolder.getImgOrderStatus().setImageDrawable(mActivity.getResources().getDrawable(R.drawable.circle_blue));
                 break;
             case "REJECTED":
                 viewHolder.getImgOrderStatus().setImageDrawable(mActivity.getResources().getDrawable(R.drawable.circle_red));
