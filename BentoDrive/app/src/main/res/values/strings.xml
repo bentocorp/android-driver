@@ -1,6 +1,7 @@
 <resources>
 
-    <string name="order_sms_message">Hi %s,\nThanks for ordering Bento! Your order should arrive in about 20 minutes. We\'ll message you once your order is on its way.</string>
+    <!--<string name="order_sms_message">Hi %s,\nThanks for ordering Bento! Your order should arrive in about 20 minutes. We\'ll message you once your order is on its way.</string>-->
+    <string name="order_sms_message"></string>
     <string name="dialog_msg_login_empty">Please enter both your username and password</string>
     <string name="error_failed_authenticate">Failed to authenticate</string>
     <string name="error_node_connection">Failed to connect</string>
@@ -8,5 +9,10 @@
     <string name="dialog_msg_log_out">Save login info?</string>
     <string name="dialog_title_accept_task">Accept Task?</string>
     <string name="dialog_msg_accept_task">Are you sure you want to accept this task?</string>
+    <string name="dialog_title_reject_task">Reject Task?</string>
+    <string name="dialog_msg_reject_task">Are you sure you want to reject this task?</string>
+    <string name="notification_assigned_task">Task assigned!</string>
+    <string name="notification_un_assigned_task">Task removed!</string>
+    <string name="notification_change_task">Task switched!</string>
 
 </resources>

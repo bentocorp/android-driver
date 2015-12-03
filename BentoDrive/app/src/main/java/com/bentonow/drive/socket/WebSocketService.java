@@ -172,16 +172,17 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     }
 
     public void onNodeEventListener(final NodeEventsListener mListener) {
-        if (mSocket != null && mListener != null) {
+        if (mSocket != null) {
             DebugUtils.logDebug(TAG, "Push: Subscribed");
             mSocket.on("push", new Emitter.Listener() {
                 @Override
                 public void call(Object[] args) {
                     try {
-                       // DebugUtils.logDebug(TAG, "Push: " + args[0].toString());
+                        // DebugUtils.logDebug(TAG, "Push: " + args[0].toString());
                         OrderItemModel mOrder = BentoOrderJsonParser.parseBentoOrderItem(args[0].toString());
                         //  Push push = mapper.readValue(args[0].toString(), Push.class);
-                        mListener.onPush(mOrder);
+                        if (mListener != null)
+                            mListener.onPush(mOrder);
                     } catch (Exception e) {
                         DebugUtils.logError(TAG, "Push: " + e.toString());
                     }
@@ -201,6 +202,13 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                     }
                 });
             }
+        }
+    }
+
+    public void removeNodeListener() {
+        if (mSocket != null) {
+            mSocket.off("push");
+            mSocket.off("pong");
         }
     }
 

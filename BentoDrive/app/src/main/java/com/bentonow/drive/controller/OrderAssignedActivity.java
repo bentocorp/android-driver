@@ -66,9 +66,12 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     private ServiceConnection mConnection = new WebSocketServiceConnection();
 
     private List<OrderItemModel> aListOder = new ArrayList<>();
-    private OrderItemModel mOrderModel;
+    ArrayList<OrderItemModel> aTempListOder = new ArrayList<>();
+
+    //private OrderItemModel mOrderModel;
 
     private boolean mBound = false;
+    private boolean mInFront = false;
 
     private long lOrderId;
 
@@ -80,12 +83,17 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
         lOrderId = getIntent().getLongExtra(TAG_ORDER_ID, 0);
 
-        mOrderModel = OrderItemDAO.getOrderById(lOrderId);
+        /*mOrderModel = OrderItemDAO.getOrderById(lOrderId);
 
         if (mOrderModel == null)
-            finish();
+            finish();*/
 
         // mOrderModel = getIntent().getParcelableExtra(OrderItemModel.TAG);
+
+        aListOder = OrderItemDAO.getAllTask();
+
+        if (aListOder.isEmpty())
+            finish();
 
         getContainerMessage().setOnClickListener(this);
         getContainerCall().setOnClickListener(this);
@@ -97,17 +105,17 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         getBtnArrivedOrder().setOnClickListener(this);
         getBtnCompleteOrder().setOnClickListener(this);
 
-        getTxtOrderContent().setText(mOrderModel.getItem());
-        getTxtToolbarSubtitle().setText(mOrderModel.getName());
+        getTxtOrderContent().setText(aListOder.get(0).getItem());
+        getTxtToolbarSubtitle().setText(aListOder.get(0).getName());
 
         updateUI();
 
-        aListOder = OrderItemDAO.getAllTask();
+
     }
 
     private void updateUI() {
 
-        switch (mOrderModel.getStatus()) {
+        switch (aListOder.get(0).getStatus()) {
             case "PENDING":
                 getBtnAcceptOrder().setVisibility(View.VISIBLE);
                 getBtnRejectOrder().setVisibility(View.VISIBLE);
@@ -138,7 +146,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 break;
         }
 
-        OrderItemDAO.save(mOrderModel);
+        OrderItemDAO.update(aListOder.get(0));
+        aListOder = OrderItemDAO.getAllTask();
     }
 
 
@@ -173,7 +182,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
         getLoaderDialog().show();
 
-        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ACCEPT, mOrderModel, new TextHttpResponseHandler() {
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ACCEPT, aListOder.get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
@@ -197,7 +206,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    mOrderModel.setStatus("ACCEPTED");
+                                    aListOder.get(0).setStatus("ACCEPTED");
                                     updateUI();
                                 }
                             });
@@ -208,7 +217,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            mOrderModel.setStatus("ACCEPTED");
+                                            aListOder.get(0).setStatus("ACCEPTED");
                                             updateUI();
                                         }
                                     });
@@ -232,7 +241,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
         getLoaderDialog().show();
 
-        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.REJECT, mOrderModel, new TextHttpResponseHandler() {
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.REJECT, aListOder.get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
@@ -256,7 +265,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    mOrderModel.setStatus("REJECTED");
+                                    aListOder.get(0).setStatus("REJECTED");
                                     updateUI();
                                 }
                             });
@@ -267,7 +276,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            mOrderModel.setStatus("REJECTED");
+                                            aListOder.get(0).setStatus("REJECTED");
                                             updateUI();
                                         }
                                     });
@@ -293,7 +302,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
         getLoaderDialog().show();
 
-        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ARRIVED, mOrderModel, new TextHttpResponseHandler() {
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ARRIVED, aListOder.get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
@@ -313,7 +322,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    mOrderModel.setStatus("ARRIVED");
+                                    aListOder.get(0).setStatus("ARRIVED");
                                     updateUI();
                                 }
                             });
@@ -324,7 +333,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            mOrderModel.setStatus("ARRIVED");
+                                            aListOder.get(0).setStatus("ARRIVED");
                                             updateUI();
                                         }
                                     });
@@ -347,7 +356,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
         getLoaderDialog().show();
 
-        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.COMPLETE, mOrderModel, new TextHttpResponseHandler() {
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.COMPLETE, aListOder.get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
@@ -367,10 +376,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    mOrderModel.setStatus("COMPLETED");
-                                    OrderItemDAO.delete(mOrderModel);
-
-                                    onBackPressed();
+                                    completeTask();
                                 }
                             });
                             break;
@@ -380,10 +386,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            mOrderModel.setStatus("COMPLETED");
-                                            OrderItemDAO.delete(mOrderModel);
-
-                                            onBackPressed();
+                                            completeTask();
                                         }
                                     });
                                 } else
@@ -399,6 +402,24 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
             }
 
         });
+    }
+
+    private void completeTask() {
+        aTempListOder.clear();
+
+        for (int a = 1; a < aListOder.size(); a++)
+            aTempListOder.add(aListOder.get(a));
+
+        refreshData();
+
+        onBackPressed();
+    }
+
+    private void refreshData() {
+        OrderItemDAO.saveAll(aTempListOder);
+        aListOder = OrderItemDAO.getAllTask();
+
+        DebugUtils.logDebug(TAG, "Total Orders: " + aListOder.size());
     }
 
     private void dismissDialog() {
@@ -430,21 +451,82 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
 
     @Override
-    public void onPush(OrderItemModel mOrderModel) {
+    public void onPush(OrderItemModel mOrder) {
+        if (mInFront) {
+            DebugUtils.logDebug(TAG, "Push: " + aListOder.get(0).getOrderId() + " Type: " + mOrder.getOrderType() + " After: " + mOrder.getAfter());
+            aTempListOder.clear();
+            int iOrderId = 0;
 
-        switch (mOrderModel.getOrderType()) {
-            case "ASSIGN":
+            switch (mOrder.getOrderType()) {
+                case "ASSIGN":
+                    if (aListOder.get(0).getOrderId().equals(mOrder.getAfter())) {
+                        aTempListOder.add(mOrder);
+                        aTempListOder.addAll(aListOder);
 
-                break;
-            case "UNASSIGN":
+                        OrderItemDAO.saveAll(aTempListOder);
+                        WidgetsUtils.createShortToast(R.string.notification_change_task);
 
-                break;
-            case "REPRIORITIZE":
+                        finish();
+                    } else if (mOrder.getAfter().isEmpty()) {
+                        aTempListOder.addAll(aListOder);
+                        aTempListOder.add(mOrder);
 
-                break;
-            default:
-                DebugUtils.logDebug(TAG, "OrderType: Unhandled " + mOrderModel.getOrderType());
-                break;
+                        refreshData();
+                    } else {
+                        for (int a = 0; a < aListOder.size(); a++) {
+                            if (aListOder.get(a).getOrderId().equals(mOrder.getAfter())) {
+                                aTempListOder.add(mOrder);
+                            }
+                            aTempListOder.add(aListOder.get(a));
+                        }
+
+                        refreshData();
+                    }
+                    break;
+                case "UNASSIGN":
+                    for (int a = 0; a < aListOder.size(); a++) {
+                        if (aListOder.get(a).getOrderId().equals(mOrder.getOrderId()))
+                            iOrderId = a;
+                        else
+                            aTempListOder.add(aListOder.get(a));
+                    }
+
+                    refreshData();
+
+                    if (iOrderId == 0) {
+                        if (aTempListOder.isEmpty())
+                            WidgetsUtils.createShortToast(R.string.notification_un_assigned_task);
+                        else
+                            WidgetsUtils.createShortToast(R.string.notification_change_task);
+
+                        finish();
+                    }
+
+                    break;
+                case "REPRIORITIZE":
+                    for (int a = 0; a < aListOder.size(); a++) {
+                        if (aListOder.get(a).getOrderId().equals(mOrder.getAfter())) {
+                            aTempListOder.add(mOrder);
+                            iOrderId = a;
+                        }
+
+                        if (!aListOder.get(a).getOrderId().equals(mOrder.getOrderId()))
+                            aTempListOder.add(aListOder.get(a));
+                    }
+                    if (mOrder.getAfter().isEmpty())
+                        aTempListOder.add(mOrder);
+
+                    refreshData();
+
+                    if (iOrderId == 0) {
+                        WidgetsUtils.createShortToast(R.string.notification_change_task);
+                        finish();
+                    }
+                    break;
+                default:
+                    DebugUtils.logDebug(TAG, "OrderType: Unhandled " + aListOder.get(0).getOrderType());
+                    break;
+            }
         }
     }
 
@@ -452,30 +534,38 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.container_message:
-                if (mOrderModel != null)
-                    AndroidUtil.populateSmsApp(OrderAssignedActivity.this, mOrderModel.getPhone(), String.format(getString(R.string.order_sms_message), mOrderModel.getName()));
+                if (aListOder.get(0) != null)
+                    AndroidUtil.populateSmsApp(OrderAssignedActivity.this, aListOder.get(0).getPhone(), String.format(getString(R.string.order_sms_message), aListOder.get(0).getName()));
                 break;
             case R.id.container_call:
-                if (mOrderModel != null)
-                    AndroidUtil.makeCall(OrderAssignedActivity.this, mOrderModel.getPhone());
+                if (aListOder.get(0) != null)
+                    AndroidUtil.makeCall(OrderAssignedActivity.this, aListOder.get(0).getPhone());
                 break;
             case R.id.container_map:
-                if (mOrderModel != null)
-                    SocialNetworksUtil.openWazeLocation(OrderAssignedActivity.this, mOrderModel.getAddress().getLat(), mOrderModel.getAddress().getLng());
+                if (aListOder.get(0) != null)
+                    SocialNetworksUtil.openWazeLocation(OrderAssignedActivity.this, aListOder.get(0).getAddress().getLat(), aListOder.get(0).getAddress().getLng());
                 break;
             case R.id.btn_accept_order:
-                DialogMaterial mDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
-                mDialog.addCancelButton("Cancel");
-                mDialog.addAcceptButton("Accept", new View.OnClickListener() {
+                DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
+                mAcceptDialog.addCancelButton("Cancel");
+                mAcceptDialog.addAcceptButton("Accept", new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         acceptOrder();
                     }
                 });
-                mDialog.show();
+                mAcceptDialog.show();
                 break;
             case R.id.btn_reject_order:
-                rejectOrder();
+                DialogMaterial mRejectDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_reject_task), getString(R.string.dialog_msg_reject_task));
+                mRejectDialog.addCancelButton("Cancel");
+                mRejectDialog.addAcceptButton("Reject", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        rejectOrder();
+                    }
+                });
+                mRejectDialog.show();
                 break;
             case R.id.btn_arrived_order:
                 arrivedOrder();
@@ -504,8 +594,17 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     @Override
     protected void onStart() {
         super.onStart();
+        mInFront = true;
         Intent intent = new Intent(this, WebSocketService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (webSocketService != null)
+            webSocketService.removeNodeListener();
+        mInFront = false;
     }
 
     @Override

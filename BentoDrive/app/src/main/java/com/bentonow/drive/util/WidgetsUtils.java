@@ -4,6 +4,8 @@
  */
 package com.bentonow.drive.util;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
 
 import com.bentonow.drive.Application;
@@ -11,13 +13,15 @@ import com.bentonow.drive.Application;
 
 public class WidgetsUtils {
 
+    public static Handler mHandler;
+
     /**
      * Method that creates a short toast based in a String
      *
      * @param message The String that is going to be show
      */
     public static void createShortToast(final String message) {
-        Application.getInstance().handlerPost(new Runnable() {
+        getHandler().post(new Runnable() {
             public void run() {
                 Toast.makeText(Application.getInstance(), message, Toast.LENGTH_SHORT).show();
             }
@@ -30,7 +34,7 @@ public class WidgetsUtils {
      * @param message The String that is going to be show
      */
     public static void createLongToast(final String message) {
-        Application.getInstance().handlerPost(new Runnable() {
+        getHandler().post(new Runnable() {
             public void run() {
                 Toast.makeText(Application.getInstance(), message, Toast.LENGTH_LONG).show();
             }
@@ -43,7 +47,7 @@ public class WidgetsUtils {
      * @param id The Int from the String id
      */
     public static void createShortToast(final int id) {
-        Application.getInstance().handlerPost(new Runnable() {
+        getHandler().post(new Runnable() {
             public void run() {
                 Toast.makeText(Application.getInstance(), Application.getInstance().getString(id), Toast.LENGTH_SHORT).show();
             }
@@ -56,11 +60,18 @@ public class WidgetsUtils {
      * @param id
      */
     public static void createLongToast(final int id) {
-        Application.getInstance().handlerPost(new Runnable() {
+        getHandler().post(new Runnable() {
             public void run() {
                 Toast.makeText(Application.getInstance(), Application.getInstance().getString(id), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    public static Handler getHandler() {
+        if (mHandler == null)
+            mHandler = new Handler(Looper.getMainLooper());
+
+        return mHandler;
     }
 
 }

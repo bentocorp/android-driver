@@ -59,6 +59,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     private OrderItemModel mCurrentOrder;
 
     private boolean mBound = false;
+    private boolean mInFront = false;
 
     private boolean mIsFirstTime;
 
@@ -77,34 +78,40 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     }
 
-    private void refreshAssignedList() {
+    private void refreshAssignedList(boolean bSaveList, boolean bRefresh) {
         getListAdapter().aListOrder.clear();
 
-        OrderItemDAO.deleteAll();
+        if (bSaveList)
+            OrderItemDAO.saveAll(aListOder);
 
-        OrderItemDAO.save(aListOder);
+        if (bRefresh) {
 
-        for (int a = 0; a < aListOder.size(); a++) {
-            mCurrentOrder = aListOder.get(a);
-            getListAdapter().aListOrder.add(mCurrentOrder);
-            break;
+            for (int a = 0; a < aListOder.size(); a++) {
+                mCurrentOrder = aListOder.get(a);
+                getListAdapter().aListOrder.add(mCurrentOrder);
+                break;
+            }
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    getTxtEmptyView().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.VISIBLE : View.GONE);
+                    getListOrder().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.GONE : View.VISIBLE);
+                    getListAdapter().notifyDataSetChanged();
+
+                    if (mIsFirstTime) {
+                        getLoaderDialog().dismiss();
+                        mIsFirstTime = false;
+                    }
+                }
+            });
+
         }
+
 
         DebugUtils.logDebug(TAG, "Total Orders: " + aListOder.size());
 
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                getListAdapter().notifyDataSetChanged();
-                getTxtEmptyView().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.VISIBLE : View.GONE);
-                getListOrder().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.GONE : View.VISIBLE);
 
-                if (mIsFirstTime) {
-                    getLoaderDialog().dismiss();
-                    mIsFirstTime = false;
-                }
-            }
-        });
     }
 
     private void setNodeListener() {
@@ -158,7 +165,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                 DebugUtils.logError(TAG, "Code: " + statusCode);
                 DebugUtils.logError(TAG, "Response: " + responseString);
 
-                refreshAssignedList();
+                refreshAssignedList(true, true);
             }
 
             @SuppressWarnings("deprecation")
@@ -172,7 +179,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                     DebugUtils.logError(TAG, ex);
                 }
 
-                refreshAssignedList();
+                refreshAssignedList(true, true);
             }
 
         });
@@ -200,67 +207,86 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     @Override
     public void onPush(OrderItemModel mOrder) {
-        DebugUtils.logDebug(TAG, "Push: " + mOrder.getOrderId());
+        if (mInFront) {
+            DebugUtils.logDebug(TAG, "Push: " + mOrder.getOrderId() + " Type: " + mOrder.getOrderType() + " After: " + mOrder.getAfter());
+            boolean bRefresh = true;
+            int iOrderId = 0;
 
-        switch (mOrder.getOrderType()) {
-            case "ASSIGN":
-                if (aListOder.isEmpty()) {
-                    aListOder.add(mOrder);
-                } else {
-                    //  DebugUtils.logDebug(TAG, "CurrentId: " + mCurrentOrder.getId() + " AfterId: " + mOrder.getAfter());
-                    if (mOrder.getAfter().isEmpty())
+            ArrayList<OrderItemModel> aTempListOder = new ArrayList<>();
+
+            switch (mOrder.getOrderType()) {
+                case "ASSIGN":
+                    if (aListOder.isEmpty()) {
                         aListOder.add(mOrder);
-                    else {
-                        ArrayList<OrderItemModel> aTempListOder = new ArrayList<>();
+                        WidgetsUtils.createShortToast(R.string.notification_assigned_task);
+                    } else if (mOrder.getAfter().isEmpty()) {
+                        aListOder.add(mOrder);
+                    } else {
+                        if (aListOder.get(0).getOrderId().equals(mOrder.getAfter())) {
+                            aTempListOder.add(mOrder);
+                            WidgetsUtils.createShortToast(R.string.notification_assigned_task);
+                            aTempListOder.addAll(aListOder);
+                        } else {
+                            for (int a = 0; a < aListOder.size(); a++) {
+                                if (aListOder.get(a).getOrderId().equals(mOrder.getAfter())) {
+                                    aTempListOder.add(mOrder);
+                                }
+                                aTempListOder.add(aListOder.get(a));
+                            }
+                            bRefresh = false;
+                        }
+                        aListOder = (ArrayList<OrderItemModel>) aTempListOder.clone();
+                    }
 
+                    refreshAssignedList(true, bRefresh);
+                    break;
+                case "UNASSIGN":
+                    for (int a = 0; a < aListOder.size(); a++)
+                        if (aListOder.get(a).getOrderId().equals(mOrder.getOrderId())) {
+                            iOrderId = a;
+                            aListOder.remove(a);
+                            break;
+                        }
+
+                    if (iOrderId == 0) {
+                        if (aListOder.isEmpty())
+                            WidgetsUtils.createShortToast(R.string.notification_un_assigned_task);
+                        else
+                            WidgetsUtils.createShortToast(R.string.notification_change_task);
+                    }
+
+
+                    refreshAssignedList(true, bRefresh);
+                    break;
+                case "REPRIORITIZE":
+                    if (aListOder.isEmpty()) {
+                        aListOder.add(mOrder);
+                        WidgetsUtils.createShortToast(R.string.notification_assigned_task);
+                    } else {
                         for (int a = 0; a < aListOder.size(); a++) {
-                            if (aListOder.get(a).getId().equals(mOrder.getAfter())) {
+                            if (aListOder.get(a).getOrderId().equals(mOrder.getAfter())) {
+                                iOrderId = a;
                                 aTempListOder.add(mOrder);
                             }
-                            aTempListOder.add(aListOder.get(a));
-                        }
-                        aListOder = (ArrayList<OrderItemModel>) aTempListOder.clone();
-                    }
 
-                }
-
-                refreshAssignedList();
-                break;
-            case "UNASSIGN":
-                for (int a = 0; a < aListOder.size(); a++)
-                    if (aListOder.get(a).getId().equals(mOrder.getId())) {
-                        aListOder.remove(a);
-                        break;
-                    }
-
-                refreshAssignedList();
-                break;
-            case "REPRIORITIZE":
-                if (aListOder.isEmpty()) {
-                    aListOder.add(mOrder);
-                } else {
-                    if (mOrder.getAfter().isEmpty())
-                        aListOder.add(mOrder);
-                    else {
-                        ArrayList<OrderItemModel> aTempListOder = new ArrayList<>();
-
-                        for (int a = 0; a < aListOder.size(); a++) {
-                            if (aListOder.get(a).getId().equals(mOrder.getAfter()))
-                                aTempListOder.add(mOrder);
-
-                            if (!aListOder.get(a).getId().equals(mOrder.getId()))
+                            if (!aListOder.get(a).getOrderId().equals(mOrder.getOrderId()))
                                 aTempListOder.add(aListOder.get(a));
                         }
+                        if (mOrder.getAfter().isEmpty())
+                            aTempListOder.add(mOrder);
+
                         aListOder = (ArrayList<OrderItemModel>) aTempListOder.clone();
                     }
 
-                }
+                    if (iOrderId == 0)
+                        WidgetsUtils.createShortToast(R.string.notification_change_task);
 
-                refreshAssignedList();
-                break;
-            default:
-                DebugUtils.logDebug(TAG, "OrderType: Unhandled " + mOrder.getOrderType());
-                break;
+                    refreshAssignedList(true, bRefresh);
+                    break;
+                default:
+                    DebugUtils.logDebug(TAG, "OrderType: Unhandled " + mOrder.getOrderType());
+                    break;
+            }
         }
     }
 
@@ -325,8 +351,17 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     @Override
     protected void onStart() {
         super.onStart();
+        mInFront = true;
         Intent intent = new Intent(this, WebSocketService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (webSocketService != null)
+            webSocketService.removeNodeListener();
+        mInFront = false;
     }
 
     @Override
@@ -343,8 +378,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         super.onResume();
         aListOder = OrderItemDAO.getAllTask();
 
-        if (!aListOder.isEmpty())
-            refreshAssignedList();
+        refreshAssignedList(false, true);
     }
 
 
