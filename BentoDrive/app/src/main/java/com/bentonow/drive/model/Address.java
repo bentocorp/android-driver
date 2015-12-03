@@ -3,10 +3,12 @@ package com.bentonow.drive.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.orm.SugarRecord;
+
 /**
  * Created by joseguadalupetorresfuentes on 15/11/15.
  */
-public class Address implements Parcelable {
+public class Address extends SugarRecord implements Parcelable {
 
     private String street = "";
     private String residence = "";
@@ -18,6 +20,17 @@ public class Address implements Parcelable {
     private double lng;
 
     public Address() {
+    }
+
+    public Address(String street, String residence, String city, String region, String zipCode, String country, double lat, double lng) {
+        this.street = street;
+        this.residence = residence;
+        this.city = city;
+        this.region = region;
+        this.zipCode = zipCode;
+        this.country = country;
+        this.lat = lat;
+        this.lng = lng;
     }
 
     public Address(Parcel parcel) {

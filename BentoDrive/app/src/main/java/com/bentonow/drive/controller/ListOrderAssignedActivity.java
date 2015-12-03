@@ -19,6 +19,7 @@ import com.bentonow.drive.listener.NodeEventsListener;
 import com.bentonow.drive.listener.RecyclerListListener;
 import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.model.OrderItemModel;
+import com.bentonow.drive.model.sugar.OrderItemDAO;
 import com.bentonow.drive.parse.jackson.BentoOrderJsonParser;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.BentoDriveUtil;
@@ -32,6 +33,7 @@ import com.loopj.android.http.TextHttpResponseHandler;
 import org.apache.http.Header;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -39,7 +41,7 @@ import java.util.ArrayList;
 public class ListOrderAssignedActivity extends MainActivity implements View.OnClickListener, RecyclerListListener, NodeEventsListener {
 
     public static final String TAG = "ListOrderAssignedActivity";
-    public static final int TAG_ID = 2;
+    //public static final int TAG_ID = 2;
 
     private ImageView imgMenuItemLogOut;
     private TextView txtEmptyView;
@@ -52,7 +54,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
 
-    private ArrayList<OrderItemModel> aListOder = new ArrayList<>();
+    private List<OrderItemModel> aListOder = new ArrayList<>();
 
     private OrderItemModel mCurrentOrder;
 
@@ -77,6 +79,10 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     private void refreshAssignedList() {
         getListAdapter().aListOrder.clear();
+
+        OrderItemDAO.deleteAll();
+
+        OrderItemDAO.save(aListOder);
 
         for (int a = 0; a < aListOder.size(); a++) {
             mCurrentOrder = aListOder.get(a);
@@ -129,6 +135,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                             if (!disconnectingPurposefully) {
                                 WidgetsUtils.createShortToast(R.string.error_node_connection);
                                 aListOder.clear();
+                                OrderItemDAO.deleteAll();
                                 setNodeListener();
                             }
                         }
@@ -193,6 +200,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     @Override
     public void onPush(OrderItemModel mOrder) {
+        DebugUtils.logDebug(TAG, "Push: " + mOrder.getOrderId());
 
         switch (mOrder.getOrderType()) {
             case "ASSIGN":
@@ -288,11 +296,13 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     @Override
     public void OnItemClickListener(int iPosition) {
         Intent mIntentOrder = new Intent(ListOrderAssignedActivity.this, OrderAssignedActivity.class);
-        mIntentOrder.putExtra(OrderItemModel.TAG, getListAdapter().aListOrder.get(iPosition));
-        startActivityForResult(mIntentOrder, TAG_ID);
+        // mIntentOrder.putExtra(OrderItemModel.TAG, getListAdapter().aListOrder.get(iPosition));
+        mIntentOrder.putExtra(OrderAssignedActivity.TAG_ORDER_ID, getListAdapter().aListOrder.get(iPosition).getId());
+        startActivity(mIntentOrder);
+        // startActivityForResult(mIntentOrder, TAG_ID);
     }
 
-    @Override
+   /* @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == TAG_ID) {
@@ -306,11 +316,11 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                     else
                         aListOder.set(0, mRetrieveItem);
                 }
-                
+
                 refreshAssignedList();
             }
         }
-    }
+    }*/
 
     @Override
     protected void onStart() {
@@ -331,6 +341,10 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     @Override
     protected void onResume() {
         super.onResume();
+        aListOder = OrderItemDAO.getAllTask();
+
+        if (!aListOder.isEmpty())
+            refreshAssignedList();
     }
 
 

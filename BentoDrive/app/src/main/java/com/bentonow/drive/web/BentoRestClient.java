@@ -91,7 +91,7 @@ public class BentoRestClient {
     }
 
     public static void getStatusOrder(ConstantUtil.optStatusOrder optStatusOrder, OrderItemModel mOrderModel, AsyncHttpResponseHandler responseHandler) {
-        getClient().get(BentoDriveAPI.getStatusOrderUrl(optStatusOrder, mOrderModel.getId()), null, responseHandler);
+        getClient().get(BentoDriveAPI.getStatusOrderUrl(optStatusOrder, mOrderModel.getOrderId()), null, responseHandler);
     }
 
 /*    public static void post(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {

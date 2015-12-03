@@ -11,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bentonow.drive.R;
+import com.bentonow.drive.model.sugar.OrderItemDAO;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
@@ -37,6 +38,8 @@ public class SplashActivity extends MainActivity {
         setContentView(R.layout.activity_splash);
 
         getTxtAppVersion().setText(AndroidUtil.getVersionName());
+
+        OrderItemDAO.deleteAll();
 
         new CountDownTimer(2 * 600, 1000) {
 

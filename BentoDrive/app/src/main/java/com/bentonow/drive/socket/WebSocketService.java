@@ -178,7 +178,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 @Override
                 public void call(Object[] args) {
                     try {
-                        DebugUtils.logDebug(TAG, "Push: " + args[0].toString());
+                       // DebugUtils.logDebug(TAG, "Push: " + args[0].toString());
                         OrderItemModel mOrder = BentoOrderJsonParser.parseBentoOrderItem(args[0].toString());
                         //  Push push = mapper.readValue(args[0].toString(), Push.class);
                         mListener.onPush(mOrder);

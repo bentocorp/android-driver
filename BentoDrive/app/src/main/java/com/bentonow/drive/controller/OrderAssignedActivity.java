@@ -17,6 +17,7 @@ import com.bentonow.drive.listener.NodeEventsListener;
 import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.model.ResponseModel;
+import com.bentonow.drive.model.sugar.OrderItemDAO;
 import com.bentonow.drive.parse.jackson.MainParser;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
@@ -33,12 +34,17 @@ import com.loopj.android.http.TextHttpResponseHandler;
 
 import org.apache.http.Header;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by Jose Torres on 11/10/15.
  */
 public class OrderAssignedActivity extends MainActivity implements View.OnClickListener, NodeEventsListener {
 
     public static final String TAG = "OrderAssignedActivity";
+
+    public static final String TAG_ORDER_ID = "OrderId";
 
     private ImageView imgMenuItemLogOut;
     private FrameLayout mContainerMessage;
@@ -52,22 +58,34 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     private TextView txtOrderContent;
     private TextView txtStatus;
+    private TextView txtToolbarSubtitle;
 
     private ProgressDialog mLoaderDialog;
 
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
 
+    private List<OrderItemModel> aListOder = new ArrayList<>();
+    private OrderItemModel mOrderModel;
+
     private boolean mBound = false;
 
-    private OrderItemModel mOrderModel;
+    private long lOrderId;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_bento);
 
-        mOrderModel = getIntent().getParcelableExtra(OrderItemModel.TAG);
+        lOrderId = getIntent().getLongExtra(TAG_ORDER_ID, 0);
+
+        mOrderModel = OrderItemDAO.getOrderById(lOrderId);
+
+        if (mOrderModel == null)
+            finish();
+
+        // mOrderModel = getIntent().getParcelableExtra(OrderItemModel.TAG);
 
         getContainerMessage().setOnClickListener(this);
         getContainerCall().setOnClickListener(this);
@@ -80,9 +98,11 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         getBtnCompleteOrder().setOnClickListener(this);
 
         getTxtOrderContent().setText(mOrderModel.getItem());
+        getTxtToolbarSubtitle().setText(mOrderModel.getName());
 
         updateUI();
 
+        aListOder = OrderItemDAO.getAllTask();
     }
 
     private void updateUI() {
@@ -117,6 +137,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 getTxtStatus().setVisibility(View.VISIBLE);
                 break;
         }
+
+        OrderItemDAO.save(mOrderModel);
     }
 
 
@@ -126,8 +148,6 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     private void logInDrive() {
         if (!webSocketService.isConnectedUser()) {
-            getLoaderDialog().show();
-
             DebugUtils.logDebug(TAG, "Attempting to connect to node");
 
             webSocketService.connectWebSocket(SharedPreferencesUtil.getStringPreference(OrderAssignedActivity.this, SharedPreferencesUtil.USER_NAME),
@@ -348,6 +368,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                 @Override
                                 public void run() {
                                     mOrderModel.setStatus("COMPLETED");
+                                    OrderItemDAO.delete(mOrderModel);
+
                                     onBackPressed();
                                 }
                             });
@@ -359,6 +381,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                         @Override
                                         public void run() {
                                             mOrderModel.setStatus("COMPLETED");
+                                            OrderItemDAO.delete(mOrderModel);
+
                                             onBackPressed();
                                         }
                                     });
@@ -470,10 +494,11 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     @Override
     public void onBackPressed() {
-        Intent mIntent = new Intent();
-        mIntent.putExtra(OrderItemModel.TAG, mOrderModel);
-        setResult(RESULT_OK, mIntent);
         super.onBackPressed();
+       /* Intent mIntent = new Intent();
+        mIntent.putExtra(OrderItemModel.TAG, mOrderModel);
+        setResult(RESULT_OK, mIntent);*/
+        // mOrderModel.save();
     }
 
     @Override
@@ -557,6 +582,13 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         if (txtStatus == null)
             txtStatus = (TextView) findViewById(R.id.txt_status);
         return txtStatus;
+    }
+
+
+    private TextView getTxtToolbarSubtitle() {
+        if (txtToolbarSubtitle == null)
+            txtToolbarSubtitle = (TextView) findViewById(R.id.txt_toolbar_subtitle);
+        return txtToolbarSubtitle;
     }
 
 

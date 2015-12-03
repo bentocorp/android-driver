@@ -39,7 +39,7 @@ public class BentoOrderJsonParser extends MainParser {
                         nameField = jp.getCurrentName();
                         jp.nextToken();
                         if (TAG_ID.equals(nameField)) {
-                            mOrder.setId(jp.getText());
+                            mOrder.setOrderId(jp.getText());
                         } else if (TAG_NAME.equals(nameField)) {
                             mOrder.setName(jp.getText());
                         } else if (TAG_PHONE.equals(nameField)) {
@@ -69,7 +69,7 @@ public class BentoOrderJsonParser extends MainParser {
                                 }
                             }
                         } else if (TAG_ITEM.equals(nameField)) {
-                            if (mOrder.getId().startsWith("g")) {
+                            if (mOrder.getOrderId().startsWith("g")) {
                                 mOrder.setItem(jp.getText());
                             } else {
                                 int nBento = 0;
@@ -165,7 +165,7 @@ public class BentoOrderJsonParser extends MainParser {
                             nameField = jp.getCurrentName();
                             jp.nextToken();
                             if (TAG_ID.equals(nameField)) {
-                                mOrder.setId(jp.getText());
+                                mOrder.setOrderId(jp.getText());
                             } else if (TAG_NAME.equals(nameField)) {
                                 mOrder.setName(jp.getText());
                             } else if (TAG_PHONE.equals(nameField)) {
@@ -195,7 +195,7 @@ public class BentoOrderJsonParser extends MainParser {
                                     }
                                 }
                             } else if (TAG_ITEM.equals(nameField)) {
-                                if (mOrder.getId().startsWith("g")) {
+                                if (mOrder.getOrderId().startsWith("g")) {
                                     mOrder.setItem(jp.getText());
                                 } else {
                                     int nBento = 0;
