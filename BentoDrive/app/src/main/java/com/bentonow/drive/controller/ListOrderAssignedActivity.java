@@ -98,11 +98,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                     getTxtEmptyView().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.VISIBLE : View.GONE);
                     getListOrder().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.GONE : View.VISIBLE);
                     getListAdapter().notifyDataSetChanged();
-
-                    if (mIsFirstTime) {
-                        getLoaderDialog().dismiss();
-                        mIsFirstTime = false;
-                    }
                 }
             });
 
@@ -112,6 +107,18 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         DebugUtils.logDebug(TAG, "Total Orders: " + aListOder.size());
 
 
+    }
+
+    private void hideLoader() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (mIsFirstTime) {
+                    getLoaderDialog().dismiss();
+                    mIsFirstTime = false;
+                }
+            }
+        });
     }
 
     private void setNodeListener() {
@@ -151,19 +158,21 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         } else {
             setNodeListener();
 
-            if (mIsFirstTime)
+            if (mIsFirstTime) {
                 getAssignedOrders();
+            }
         }
     }
 
     private void getAssignedOrders() {
-
         BentoRestClient.getAssignedOrders(null, new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
                 DebugUtils.logError(TAG, "Code: " + statusCode);
                 DebugUtils.logError(TAG, "Response: " + responseString);
+
+                hideLoader();
 
                 refreshAssignedList(true, true);
             }
@@ -178,6 +187,8 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                 } catch (Exception ex) {
                     DebugUtils.logError(TAG, ex);
                 }
+
+                hideLoader();
 
                 refreshAssignedList(true, true);
             }

@@ -1,22 +1,19 @@
 package com.bentonow.drive.util;
 
-import java.security.MessageDigest;
-import java.util.List;
-import java.util.Locale;
-
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.pm.Signature;
-import android.graphics.Bitmap;
 import android.net.Uri;
-import android.provider.MediaStore;
 import android.util.Base64;
 
 import com.bentonow.drive.Application;
+
+import java.security.MessageDigest;
+import java.util.List;
+import java.util.Locale;
 
 
 public class SocialNetworksUtil {
@@ -129,12 +126,13 @@ public class SocialNetworksUtil {
         final String urlWaze = "waze://?ll=" + latitude + "," + longitude + "&navigate=yes";
 
         Intent pageIntent = new Intent(Intent.ACTION_VIEW);
-        pageIntent.setData(Uri.parse(urlLocation));
+        pageIntent.setData(Uri.parse(urlWaze));
 
         final PackageManager packageManager = act.getPackageManager();
         List<ResolveInfo> list = packageManager.queryIntentActivities(pageIntent, PackageManager.MATCH_DEFAULT_ONLY);
-        if (list.size() != 0)
-            pageIntent.setData(Uri.parse(urlWaze));
+
+        if (list.isEmpty())
+            pageIntent.setData(Uri.parse(urlLocation));
 
         act.startActivity(pageIntent);
     }

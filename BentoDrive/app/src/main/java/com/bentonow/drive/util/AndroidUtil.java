@@ -282,8 +282,14 @@ public class AndroidUtil {
     }
 
     public static void setClipboardText(String sClipboard) {
-        ClipboardManager clipboard = (ClipboardManager) Application.getInstance().getSystemService(Activity.CLIPBOARD_SERVICE);
-        clipboard.setText(sClipboard.trim());
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.HONEYCOMB) {
+            android.text.ClipboardManager clipboard = (android.text.ClipboardManager) Application.getInstance().getSystemService(Context.CLIPBOARD_SERVICE);
+            clipboard.setText(sClipboard);
+        } else {
+            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) Application.getInstance().getSystemService(Context.CLIPBOARD_SERVICE);
+            android.content.ClipData clip = android.content.ClipData.newPlainText("Copied Text", sClipboard);
+            clipboard.setPrimaryClip(clip);
+        }
     }
 
 

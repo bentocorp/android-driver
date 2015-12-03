@@ -534,16 +534,34 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.container_message:
-                if (aListOder.get(0) != null)
+                if (aListOder.get(0) != null) {
                     AndroidUtil.populateSmsApp(OrderAssignedActivity.this, aListOder.get(0).getPhone(), String.format(getString(R.string.order_sms_message), aListOder.get(0).getName()));
+                }
                 break;
             case R.id.container_call:
-                if (aListOder.get(0) != null)
-                    AndroidUtil.makeCall(OrderAssignedActivity.this, aListOder.get(0).getPhone());
+                if (aListOder.get(0) != null && aListOder.get(0).getPhone() != null) {
+                    DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
+                    mAcceptDialog.addCancelButton("Copy To Clipboard", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            AndroidUtil.setClipboardText(aListOder.get(0).getPhone());
+                        }
+                    });
+                    mAcceptDialog.addAcceptButton("Call", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            AndroidUtil.makeCall(OrderAssignedActivity.this, aListOder.get(0).getPhone());
+                        }
+                    });
+                    mAcceptDialog.show();
+                } else
+                    WidgetsUtils.createShortToast("There was a problem in the call");
                 break;
             case R.id.container_map:
-                if (aListOder.get(0) != null)
+                if (aListOder.get(0) != null) {
+
                     SocialNetworksUtil.openWazeLocation(OrderAssignedActivity.this, aListOder.get(0).getAddress().getLat(), aListOder.get(0).getAddress().getLng());
+                }
                 break;
             case R.id.btn_accept_order:
                 DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
