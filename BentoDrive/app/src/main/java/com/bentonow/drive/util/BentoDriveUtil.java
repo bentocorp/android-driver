@@ -34,12 +34,11 @@ public class BentoDriveUtil {
     }
 
     public static boolean isUserConnected(Context mContext) {
-        boolean bIsUserConnected = !SharedPreferencesUtil.getStringPreference(mContext, SharedPreferencesUtil.TOKEN).isEmpty() &&
-                !SharedPreferencesUtil.getStringPreference(mContext, SharedPreferencesUtil.USER_NAME).isEmpty();
-        return bIsUserConnected;
+        return SharedPreferencesUtil.getBooleanPreference(mContext, SharedPreferencesUtil.IS_USER_LOG_IN);
     }
 
     public static void disconnectUser(Context ctx, boolean bSaveSettings) {
+        SharedPreferencesUtil.setAppPreference(ctx, SharedPreferencesUtil.IS_USER_LOG_IN, false);
         SharedPreferencesUtil.setAppPreference(ctx, SharedPreferencesUtil.USE_SAVED_SETTINGS, bSaveSettings);
         openLogInActivity(ctx);
     }

@@ -16,6 +16,7 @@ import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
+import com.bentonow.drive.util.LocationUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.widget.material.DialogMaterial;
@@ -65,6 +66,9 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
             mDialogMaterial = new DialogMaterial(LogInActivity.this, "Error", getString(R.string.dialog_msg_login_empty));
             mDialogMaterial.addAcceptButton("OK");
             mDialogMaterial.show();
+        } else if (!LocationUtils.isGpsEnable(LogInActivity.this)) {
+            bIsValid = false;
+            LocationUtils.showGpsDialog(LogInActivity.this);
         }
 
         return bIsValid;
@@ -84,6 +88,8 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
                         if (!bAlreadyOpen) {
                             SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
                             SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
+                            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, true);
+
                             DebugUtils.logDebug(TAG, "Token: " + sToken);
                             hideDialogs();
 
