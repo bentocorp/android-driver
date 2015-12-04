@@ -53,6 +53,9 @@
             android:name="DOMAIN_PACKAGE_NAME"
             android:value="com.bentonow.drive.model" />
 
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="e416b51207b62057016bf1d61606566656652d9a" />
     </application>
 
 </manifest>

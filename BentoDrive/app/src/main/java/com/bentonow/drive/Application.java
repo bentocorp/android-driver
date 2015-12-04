@@ -9,6 +9,8 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.bentonow.drive.util.DebugUtils;
+import com.crashlytics.android.Crashlytics;
+import io.fabric.sdk.android.Fabric;
 
 
 public class Application extends com.orm.SugarApp {
@@ -24,6 +26,7 @@ public class Application extends com.orm.SugarApp {
     @Override
     public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
 
         singleton = this;
     }
