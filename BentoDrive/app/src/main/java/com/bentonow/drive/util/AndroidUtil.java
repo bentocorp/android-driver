@@ -250,18 +250,6 @@ public class AndroidUtil {
     }
 
 
-    public static void openWebUrl(Context context, String url) {
-        try {
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            if (!url.contains("http://") && !url.contains("http://"))
-                url = "http://" + url;
-            intent.setData(Uri.parse(url));
-            context.startActivity(intent);
-        } catch (Exception ex) {
-            DebugUtils.logError("Error Url", ex.toString());
-        }
-    }
-
     public static String getOperatorNanme(Context context) {
         TelephonyManager telephonyManager = ((TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE));
         return telephonyManager.getSimOperatorName();

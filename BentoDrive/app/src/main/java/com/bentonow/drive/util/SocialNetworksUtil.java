@@ -1,6 +1,7 @@
 package com.bentonow.drive.util;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -122,7 +123,6 @@ public class SocialNetworksUtil {
     }
 
     public static void openWazeLocation(Activity act, double latitude, double longitude) {
-        final String urlLocation = String.format(Locale.ENGLISH, "geo:%f,%f?q=%f,%f", latitude, longitude, latitude, longitude);
         final String urlWaze = "waze://?ll=" + latitude + "," + longitude + "&navigate=yes";
 
         Intent pageIntent = new Intent(Intent.ACTION_VIEW);
@@ -131,11 +131,46 @@ public class SocialNetworksUtil {
         final PackageManager packageManager = act.getPackageManager();
         List<ResolveInfo> list = packageManager.queryIntentActivities(pageIntent, PackageManager.MATCH_DEFAULT_ONLY);
 
-        if (list.isEmpty())
-            pageIntent.setData(Uri.parse(urlLocation));
-
-        act.startActivity(pageIntent);
+        if (!list.isEmpty())
+            act.startActivity(pageIntent);
+        else
+            openAndoridApp(act, "com.waze");
     }
 
+
+    public static void openLocation(Activity act, double latitude, double longitude) {
+        final String urlLocation = String.format(Locale.ENGLISH, "geo:%f,%f?q=%f,%f", latitude, longitude, latitude, longitude);
+
+        Intent pageIntent = new Intent(Intent.ACTION_VIEW);
+        pageIntent.setData(Uri.parse(urlLocation));
+
+        final PackageManager packageManager = act.getPackageManager();
+        List<ResolveInfo> list = packageManager.queryIntentActivities(pageIntent, PackageManager.MATCH_DEFAULT_ONLY);
+
+        if (!list.isEmpty())
+            act.startActivity(pageIntent);
+    }
+
+
+    public static void openWebUrl(Context context, String url) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            if (!url.contains("http://") && !url.contains("http://"))
+                url = "http://" + url;
+            intent.setData(Uri.parse(url));
+            context.startActivity(intent);
+        } catch (Exception ex) {
+            DebugUtils.logError("Error Url", ex.toString());
+        }
+    }
+
+
+    public static void openAndoridApp(Context context, String appPackageName) {
+        try {
+            context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appPackageName)));
+        } catch (Exception ex) {
+            context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)));
+        }
+    }
 
 }
