@@ -13,7 +13,7 @@ import com.bentonow.drive.controller.OrderAssignedActivity;
  */
 public class BentoDriveUtil {
 
-    public static final boolean bIsKokushoTesting = true;
+    public static final boolean bIsKokushoTesting = false;
 
     public static void openListBentoActivity(FragmentActivity mContext) {
         Intent intent = new Intent(mContext, ListOrderAssignedActivity.class);

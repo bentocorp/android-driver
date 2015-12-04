@@ -166,7 +166,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             public void call(Object[] args) {
                 connecting = false;
                 mListener.onDisconnect(disconnectingPurposefully);
-                //disconnectingPurposefully = false;
+                disconnectingPurposefully = false;
             }
         });
     }
@@ -174,6 +174,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     public void onNodeEventListener(final NodeEventsListener mListener) {
         if (mSocket != null) {
             DebugUtils.logDebug(TAG, "Push: Subscribed");
+            mSocket.off("push");
             mSocket.on("push", new Emitter.Listener() {
                 @Override
                 public void call(Object[] args) {
@@ -191,6 +192,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
             if (BentoDriveUtil.bIsKokushoTesting) {
                 DebugUtils.logDebug(TAG, "Pong: Subscribed");
+                mSocket.off("pong");
                 mSocket.on("pong", new Emitter.Listener() {
                     @Override
                     public void call(Object[] args) {
@@ -250,6 +252,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                     }
                 }
             });
+        } else {
+            DebugUtils.logError(TAG, "Cant send the current location");
         }
     }
 

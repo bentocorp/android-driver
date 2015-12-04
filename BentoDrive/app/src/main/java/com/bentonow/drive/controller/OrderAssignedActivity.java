@@ -171,6 +171,17 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                             WidgetsUtils.createShortToast("There was a problem: " + sReason);
                             BentoDriveUtil.disconnectUser(OrderAssignedActivity.this, false);
                         }
+
+                        @Override
+                        public void onDisconnect(boolean disconnectingPurposefully) {
+                            if (disconnectingPurposefully) {
+                                aListOder.clear();
+                                OrderItemDAO.deleteAll();
+                                finish();
+                            } else {
+                                WidgetsUtils.createShortToast(R.string.error_reconnect);
+                            }
+                        }
                     });
 
         } else {

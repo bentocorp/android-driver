@@ -146,11 +146,12 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
                         @Override
                         public void onDisconnect(boolean disconnectingPurposefully) {
-                            if (!disconnectingPurposefully) {
-                                WidgetsUtils.createShortToast(R.string.error_node_connection);
+                            if (disconnectingPurposefully) {
                                 aListOder.clear();
                                 OrderItemDAO.deleteAll();
                                 setNodeListener();
+                            } else {
+                                WidgetsUtils.createShortToast(R.string.error_reconnect);
                             }
                         }
                     });
