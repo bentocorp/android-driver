@@ -653,7 +653,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     protected void onStop() {
         super.onStop();
         if (mBound) {
-            unbindService(mConnection);
+            //  unbindService(mConnection);
             mBound = false;
         }
     }

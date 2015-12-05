@@ -178,7 +178,7 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
         super.onStop();
         // Unbind from the service
         if (mBound) {
-            unbindService(mConnection);
+           // unbindService(mConnection);
             mBound = false;
         }
     }

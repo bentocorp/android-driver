@@ -7,15 +7,19 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.IBinder;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bentonow.drive.R;
+import com.bentonow.drive.listener.DialogSelectListener;
 import com.bentonow.drive.model.sugar.OrderItemDAO;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
+import com.bentonow.drive.util.SocialNetworksUtil;
+import com.bentonow.drive.widget.material.DialogMaterial;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -49,6 +53,7 @@ public class SplashActivity extends MainActivity {
 
             @Override
             public void onFinish() {
+                /*forceDownloadLink();*/
                 if (BentoDriveUtil.isUserConnected(SplashActivity.this)) {
                     BentoDriveUtil.openListBentoActivity(SplashActivity.this);
                 } else {
@@ -56,6 +61,29 @@ public class SplashActivity extends MainActivity {
                 }
             }
         }.start();
+    }
+
+    private void forceDownloadLink() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                DialogMaterial mDialog = new DialogMaterial(SplashActivity.this, "New Version", "There is a new version available");
+                mDialog.addAcceptButton("Download", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        SocialNetworksUtil.openWebUrl(SplashActivity.this, "http://dl.dropboxusercontent.com/u/20121288/Apps-O-rama/BentoDrive/app-stage-debug.apk");
+                    }
+                });
+                mDialog.addCancelButton("Cancel");
+                mDialog.addCancelDialog(new DialogSelectListener() {
+                    @Override
+                    public void dialogConfirmation(Object obj) {
+                        finish();
+                    }
+                });
+                mDialog.show();
+            }
+        });
     }
 
     private class WebSocketServiceConnection implements ServiceConnection {
@@ -87,7 +115,7 @@ public class SplashActivity extends MainActivity {
         super.onStop();
         // Unbind from the service
         if (mBound) {
-            unbindService(mConnection);
+            //  unbindService(mConnection);
             mBound = false;
         }
     }

@@ -13,6 +13,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.bentonow.drive.R;
+import com.bentonow.drive.listener.DialogSelectListener;
 
 
 public class DialogMaterial extends android.app.Dialog {
@@ -33,6 +34,7 @@ public class DialogMaterial extends android.app.Dialog {
 
     View.OnClickListener onAcceptButtonClickListener;
     View.OnClickListener onCancelButtonClickListener;
+    DialogSelectListener mDialogListener;
 
 
     public DialogMaterial(Context context, String title, String message) {
@@ -60,6 +62,9 @@ public class DialogMaterial extends android.app.Dialog {
         this.onCancelButtonClickListener = onCancelButtonClickListener;
     }
 
+    public void addCancelDialog(DialogSelectListener mDialogListener) {
+        this.mDialogListener = mDialogListener;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,9 +101,9 @@ public class DialogMaterial extends android.app.Dialog {
         buttonAccept.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                dismiss();
                 if (onAcceptButtonClickListener != null)
                     onAcceptButtonClickListener.onClick(v);
+                dismiss();
             }
         });
 
@@ -110,9 +115,9 @@ public class DialogMaterial extends android.app.Dialog {
 
                 @Override
                 public void onClick(View v) {
-                    dismiss();
                     if (onCancelButtonClickListener != null)
                         onCancelButtonClickListener.onClick(v);
+                    dismiss();
                 }
             });
         }
@@ -214,6 +219,9 @@ public class DialogMaterial extends android.app.Dialog {
                 view.post(new Runnable() {
                     @Override
                     public void run() {
+                        if (mDialogListener != null)
+                            mDialogListener.dialogConfirmation(null);
+
                         DialogMaterial.super.dismiss();
                     }
                 });

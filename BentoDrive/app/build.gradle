@@ -19,6 +19,15 @@ android {
     compileSdkVersion 23
     buildToolsVersion '23.0.2'
 
+    signingConfigs {
+        BentoDrive {
+            keyAlias 'bento'
+            keyPassword 'bentonow'
+            storeFile file('../bento.keystore')
+            storePassword 'bentonow'
+        }
+    }
+
     defaultConfig {
         applicationId "com.bentonow.drive"
         minSdkVersion 14
@@ -31,6 +40,7 @@ android {
             minifyEnabled false
             debuggable false
             proguardFiles getDefaultProguardFile('proguard-android.main_title'), 'proguard-rules.pro'
+            signingConfig signingConfigs.BentoDrive
         }
     }
 
@@ -63,7 +73,9 @@ dependencies {
     compile 'org.apache.httpcomponents:httpcore:4.3.2'
     compile 'com.loopj.android:android-async-http:1.4.8'
     compile 'com.github.satyan:sugar:1.4'
-    compile 'io.socket:socket.io-client:0.6.2'
+    compile ('io.socket:socket.io-client:0.6.2'){
+        exclude group: 'org.json', module: 'json'
+    }
     compile(
             [group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.4.1'],
             [group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.4.1'],
