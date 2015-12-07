@@ -36,7 +36,9 @@
             android:name=".controller.OrderAssignedActivity"
             android:screenOrientation="portrait" />
 
-        <service android:name=".socket.WebSocketService" />
+        <service
+            android:name=".socket.WebSocketService"
+            android:stopWithTask="true" />
 
         <!--Sugar Database-->
 

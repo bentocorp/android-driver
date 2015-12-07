@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
@@ -11,10 +12,10 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bentonow.drive.Application;
 import com.bentonow.drive.R;
 import com.bentonow.drive.dialog.ProgressDialog;
 import com.bentonow.drive.listener.NodeEventsListener;
-import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.model.ResponseModel;
 import com.bentonow.drive.model.sugar.OrderItemDAO;
@@ -26,6 +27,7 @@ import com.bentonow.drive.util.ConstantUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.SocialNetworksUtil;
+import com.bentonow.drive.util.SoundUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.ButtonFlat;
@@ -65,35 +67,17 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
 
-    private List<OrderItemModel> aListOder = new ArrayList<>();
     ArrayList<OrderItemModel> aTempListOder = new ArrayList<>();
 
-    //private OrderItemModel mOrderModel;
-
     private boolean mBound = false;
-    private boolean mInFront = false;
 
-    private long lOrderId;
+    private String sOrderId = "";
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_bento);
-
-        lOrderId = getIntent().getLongExtra(TAG_ORDER_ID, 0);
-
-        /*mOrderModel = OrderItemDAO.getOrderById(lOrderId);
-
-        if (mOrderModel == null)
-            finish();*/
-
-        // mOrderModel = getIntent().getParcelableExtra(OrderItemModel.TAG);
-
-        aListOder = OrderItemDAO.getAllTask();
-
-        if (aListOder.isEmpty())
-            finish();
 
         getContainerMessage().setOnClickListener(this);
         getContainerCall().setOnClickListener(this);
@@ -104,18 +88,13 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         getBtnRejectOrder().setOnClickListener(this);
         getBtnArrivedOrder().setOnClickListener(this);
         getBtnCompleteOrder().setOnClickListener(this);
-
-        getTxtOrderContent().setText(aListOder.get(0).getItem());
-        getTxtToolbarSubtitle().setText(aListOder.get(0).getName());
-
-        updateUI();
-
-
     }
 
     private void updateUI() {
+        getTxtOrderContent().setText(webSocketService.getListTask().get(0).getItem());
+        getTxtToolbarSubtitle().setText(webSocketService.getListTask().get(0).getName());
 
-        switch (aListOder.get(0).getStatus()) {
+        switch (webSocketService.getListTask().get(0).getStatus()) {
             case "PENDING":
                 getBtnAcceptOrder().setVisibility(View.VISIBLE);
                 getBtnRejectOrder().setVisibility(View.VISIBLE);
@@ -146,54 +125,16 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 break;
         }
 
-        OrderItemDAO.update(aListOder.get(0));
-        aListOder = OrderItemDAO.getAllTask();
-    }
+        OrderItemDAO.update(webSocketService.getListTask().get(0));
 
-
-    private void setNodeListener() {
-        webSocketService.onNodeEventListener(OrderAssignedActivity.this);
-    }
-
-    private void logInDrive() {
-        if (!webSocketService.isConnectedUser()) {
-            DebugUtils.logDebug(TAG, "Attempting to connect to node");
-
-            webSocketService.connectWebSocket(SharedPreferencesUtil.getStringPreference(OrderAssignedActivity.this, SharedPreferencesUtil.USER_NAME),
-                    SharedPreferencesUtil.getStringPreference(OrderAssignedActivity.this, SharedPreferencesUtil.PASSWORD), new WebSocketEventListener() {
-                        @Override
-                        public void onAuthenticationSuccess(String sToken) {
-                            setNodeListener();
-                        }
-
-                        @Override
-                        public void onAuthenticationFailure(String sReason) {
-                            WidgetsUtils.createShortToast("There was a problem: " + sReason);
-                            BentoDriveUtil.disconnectUser(OrderAssignedActivity.this, false);
-                        }
-
-                        @Override
-                        public void onDisconnect(boolean disconnectingPurposefully) {
-                            if (disconnectingPurposefully) {
-                                aListOder.clear();
-                                OrderItemDAO.deleteAll();
-                                finish();
-                            } else {
-                                WidgetsUtils.createShortToast(R.string.error_reconnect);
-                            }
-                        }
-                    });
-
-        } else {
-            setNodeListener();
-        }
+        webSocketService.saveListTask(webSocketService.getListTask());
     }
 
     private void acceptOrder() {
 
         getLoaderDialog().show();
 
-        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ACCEPT, aListOder.get(0), new TextHttpResponseHandler() {
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ACCEPT, webSocketService.getListTask().get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
@@ -217,7 +158,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    aListOder.get(0).setStatus("ACCEPTED");
+                                    webSocketService.getListTask().get(0).setStatus("ACCEPTED");
+                                    SoundUtil.playNotificationSound(Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/lets_drive"));
                                     updateUI();
                                 }
                             });
@@ -228,7 +170,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            aListOder.get(0).setStatus("ACCEPTED");
+                                            webSocketService.getListTask().get(0).setStatus("ACCEPTED");
+                                            SoundUtil.playNotificationSound(Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/lets_drive"));
                                             updateUI();
                                         }
                                     });
@@ -252,7 +195,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
         getLoaderDialog().show();
 
-        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.REJECT, aListOder.get(0), new TextHttpResponseHandler() {
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.REJECT, webSocketService.getListTask().get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
@@ -276,7 +219,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    aListOder.get(0).setStatus("REJECTED");
+                                    webSocketService.getListTask().get(0).setStatus("REJECTED");
                                     updateUI();
                                 }
                             });
@@ -287,7 +230,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            aListOder.get(0).setStatus("REJECTED");
+                                            webSocketService.getListTask().get(0).setStatus("REJECTED");
                                             updateUI();
                                         }
                                     });
@@ -313,7 +256,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
         getLoaderDialog().show();
 
-        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ARRIVED, aListOder.get(0), new TextHttpResponseHandler() {
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ARRIVED, webSocketService.getListTask().get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
@@ -333,7 +276,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    aListOder.get(0).setStatus("ARRIVED");
+                                    webSocketService.getListTask().get(0).setStatus("ARRIVED");
+                                    SoundUtil.playNotificationSound(Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/notified"));
                                     updateUI();
                                 }
                             });
@@ -344,7 +288,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            aListOder.get(0).setStatus("ARRIVED");
+                                            webSocketService.getListTask().get(0).setStatus("ARRIVED");
+                                            SoundUtil.playNotificationSound(Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/notified"));
                                             updateUI();
                                         }
                                     });
@@ -367,7 +312,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
         getLoaderDialog().show();
 
-        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.COMPLETE, aListOder.get(0), new TextHttpResponseHandler() {
+        BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.COMPLETE, webSocketService.getListTask().get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
@@ -418,8 +363,10 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     private void completeTask() {
         aTempListOder.clear();
 
-        for (int a = 1; a < aListOder.size(); a++)
-            aTempListOder.add(aListOder.get(a));
+        for (int a = 1; a < webSocketService.getListTask().size(); a++)
+            aTempListOder.add(webSocketService.getListTask().get(a));
+
+        SoundUtil.playNotificationSound(Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/good_job"));
 
         refreshData();
 
@@ -427,10 +374,9 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     }
 
     private void refreshData() {
-        OrderItemDAO.saveAll(aTempListOder);
-        aListOder = OrderItemDAO.getAllTask();
+        webSocketService.saveListTask(aTempListOder);
 
-        DebugUtils.logDebug(TAG, "Total Orders: " + aListOder.size());
+        DebugUtils.logDebug(TAG, "Total Orders: " + webSocketService.getListTask().size());
     }
 
     private void dismissDialog() {
@@ -449,8 +395,17 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
             DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
             WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
             webSocketService = webSocketServiceBinder.getService();
+            webSocketService.onNodeEventListener(OrderAssignedActivity.this);
+
             mBound = true;
-            logInDrive();
+
+            if (webSocketService.getListTask().isEmpty())
+                finish();
+            else {
+                sOrderId = webSocketService.getListTask().get(0).getOrderId();
+                updateUI();
+            }
+
         }
 
         @Override
@@ -463,105 +418,30 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     @Override
     public void onPush(OrderItemModel mOrder) {
-        if (mInFront) {
-            DebugUtils.logDebug(TAG, "Push: " + aListOder.get(0).getOrderId() + " Type: " + mOrder.getOrderType() + " After: " + mOrder.getAfter());
-            aTempListOder.clear();
-            int iOrderId = 0;
-
-            switch (mOrder.getOrderType()) {
-                case "ASSIGN":
-                    if (aListOder.get(0).getOrderId().equals(mOrder.getAfter())) {
-                        aTempListOder.add(mOrder);
-                        aTempListOder.addAll(aListOder);
-
-                        OrderItemDAO.saveAll(aTempListOder);
-                        WidgetsUtils.createShortToast(R.string.notification_change_task);
-
-                        finish();
-                    } else if (mOrder.getAfter().isEmpty()) {
-                        aTempListOder.addAll(aListOder);
-                        aTempListOder.add(mOrder);
-
-                        refreshData();
-                    } else {
-                        for (int a = 0; a < aListOder.size(); a++) {
-                            if (aListOder.get(a).getOrderId().equals(mOrder.getAfter())) {
-                                aTempListOder.add(mOrder);
-                            }
-                            aTempListOder.add(aListOder.get(a));
-                        }
-
-                        refreshData();
-                    }
-                    break;
-                case "UNASSIGN":
-                    for (int a = 0; a < aListOder.size(); a++) {
-                        if (aListOder.get(a).getOrderId().equals(mOrder.getOrderId()))
-                            iOrderId = a;
-                        else
-                            aTempListOder.add(aListOder.get(a));
-                    }
-
-                    refreshData();
-
-                    if (iOrderId == 0) {
-                        if (aTempListOder.isEmpty())
-                            WidgetsUtils.createShortToast(R.string.notification_un_assigned_task);
-                        else
-                            WidgetsUtils.createShortToast(R.string.notification_change_task);
-
-                        finish();
-                    }
-
-                    break;
-                case "REPRIORITIZE":
-                    for (int a = 0; a < aListOder.size(); a++) {
-                        if (aListOder.get(a).getOrderId().equals(mOrder.getAfter())) {
-                            aTempListOder.add(mOrder);
-                            iOrderId = a;
-                        }
-
-                        if (!aListOder.get(a).getOrderId().equals(mOrder.getOrderId()))
-                            aTempListOder.add(aListOder.get(a));
-                    }
-                    if (mOrder.getAfter().isEmpty())
-                        aTempListOder.add(mOrder);
-
-                    refreshData();
-
-                    if (iOrderId == 0) {
-                        WidgetsUtils.createShortToast(R.string.notification_change_task);
-                        finish();
-                    }
-                    break;
-                default:
-                    DebugUtils.logDebug(TAG, "OrderType: Unhandled " + aListOder.get(0).getOrderType());
-                    break;
-            }
-        }
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.container_message:
-                if (aListOder.get(0) != null) {
-                    AndroidUtil.populateSmsApp(OrderAssignedActivity.this, aListOder.get(0).getPhone(), String.format(getString(R.string.order_sms_message), aListOder.get(0).getName()));
+                if (webSocketService.getListTask().get(0) != null) {
+                    AndroidUtil.populateSmsApp(OrderAssignedActivity.this, webSocketService.getListTask().get(0).getPhone(), String.format(getString(R.string.order_sms_message),
+                            webSocketService.getListTask().get(0).getName()));
                 }
                 break;
             case R.id.container_call:
-                if (aListOder.get(0) != null && aListOder.get(0).getPhone() != null) {
+                if (webSocketService.getListTask().get(0) != null && webSocketService.getListTask().get(0).getPhone() != null) {
                     DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
                     mAcceptDialog.addCancelButton("Copy To Clipboard", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            AndroidUtil.setClipboardText(aListOder.get(0).getPhone());
+                            AndroidUtil.setClipboardText(webSocketService.getListTask().get(0).getPhone());
                         }
                     });
                     mAcceptDialog.addAcceptButton("Call", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            AndroidUtil.makeCall(OrderAssignedActivity.this, aListOder.get(0).getPhone());
+                            AndroidUtil.makeCall(OrderAssignedActivity.this, webSocketService.getListTask().get(0).getPhone());
                         }
                     });
                     mAcceptDialog.show();
@@ -569,18 +449,18 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                     WidgetsUtils.createShortToast("There was a problem in the call");
                 break;
             case R.id.container_map:
-                if (aListOder.get(0) != null) {
+                if (webSocketService.getListTask().get(0) != null) {
                     DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
                     mAcceptDialog.addCancelButton("Show options", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            SocialNetworksUtil.openLocation(OrderAssignedActivity.this, aListOder.get(0).getAddress().getLat(), aListOder.get(0).getAddress().getLng());
+                            SocialNetworksUtil.openLocation(OrderAssignedActivity.this, webSocketService.getListTask().get(0).getAddress().getLat(), webSocketService.getListTask().get(0).getAddress().getLng());
                         }
                     });
                     mAcceptDialog.addAcceptButton("Open waze", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            SocialNetworksUtil.openWazeLocation(OrderAssignedActivity.this, aListOder.get(0).getAddress().getLat(), aListOder.get(0).getAddress().getLng());
+                            SocialNetworksUtil.openWazeLocation(OrderAssignedActivity.this, webSocketService.getListTask().get(0).getAddress().getLat(), webSocketService.getListTask().get(0).getAddress().getLng());
                         }
                     });
                     mAcceptDialog.show();
@@ -625,38 +505,61 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     }
 
     @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-       /* Intent mIntent = new Intent();
-        mIntent.putExtra(OrderItemModel.TAG, mOrderModel);
-        setResult(RESULT_OK, mIntent);*/
-        // mOrderModel.save();
+    public void onAssign(List<OrderItemModel> mNewList, boolean bRefresh) {
+        if (mNewList.isEmpty() || !sOrderId.equals(mNewList.get(0).getOrderId())) {
+            finish();
+        }
+    }
+
+    @Override
+    public void onUnassign(List<OrderItemModel> mNewList, boolean bRefresh) {
+        if (mNewList.isEmpty() || !sOrderId.equals(mNewList.get(0).getOrderId())) {
+            finish();
+        }
+    }
+
+    @Override
+    public void onReprioritize(List<OrderItemModel> mNewList, boolean bRefresh) {
+        if (mNewList.isEmpty() || !sOrderId.equals(mNewList.get(0).getOrderId())) {
+            finish();
+        }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        mInFront = true;
         Intent intent = new Intent(this, WebSocketService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        if (webSocketService != null)
-            webSocketService.removeNodeListener();
-        mInFront = false;
+    protected void onResume() {
+        super.onResume();
+
+        if (!BentoDriveUtil.isUserConnected(OrderAssignedActivity.this)) {
+            BentoDriveUtil.disconnectUser(OrderAssignedActivity.this, SharedPreferencesUtil.getBooleanPreference((OrderAssignedActivity.this), SharedPreferencesUtil.USE_SAVED_SETTINGS));
+            finish();
+        } else {
+            if (webSocketService != null && !sOrderId.equals("")) {
+                if (!webSocketService.getListTask().get(0).getOrderId().equals(sOrderId)) {
+                    finish();
+                }
+            }
+        }
+
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
+    protected void onDestroy() {
+        super.onDestroy();
+        DebugUtils.logDebug(TAG, "OnDestroy()");
+        // Unbind from the service
         if (mBound) {
-            //  unbindService(mConnection);
+            unbindService(mConnection);
             mBound = false;
         }
     }
+
 
     private ProgressDialog getLoaderDialog() {
         if (mLoaderDialog == null)

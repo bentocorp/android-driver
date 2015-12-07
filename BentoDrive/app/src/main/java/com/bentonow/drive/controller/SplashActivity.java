@@ -1,12 +1,7 @@
 package com.bentonow.drive.controller;
 
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.IBinder;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -14,10 +9,9 @@ import android.widget.TextView;
 import com.bentonow.drive.R;
 import com.bentonow.drive.listener.DialogSelectListener;
 import com.bentonow.drive.model.sugar.OrderItemDAO;
-import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
-import com.bentonow.drive.util.DebugUtils;
+import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.SocialNetworksUtil;
 import com.bentonow.drive.widget.material.DialogMaterial;
 
@@ -31,10 +25,6 @@ public class SplashActivity extends MainActivity {
     private ImageView imgMenuItemLogOut;
     private TextView txtAppVersion;
 
-    private WebSocketService webSocketService = null;
-    private ServiceConnection mConnection = new WebSocketServiceConnection();
-
-    private boolean mBound = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,11 +44,8 @@ public class SplashActivity extends MainActivity {
             @Override
             public void onFinish() {
                 /*forceDownloadLink();*/
-                if (BentoDriveUtil.isUserConnected(SplashActivity.this)) {
-                    BentoDriveUtil.openListBentoActivity(SplashActivity.this);
-                } else {
-                    BentoDriveUtil.openLogInActivity(SplashActivity.this);
-                }
+                SharedPreferencesUtil.setAppPreference(SplashActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
+                BentoDriveUtil.openLogInActivity(SplashActivity.this);
             }
         }.start();
     }
@@ -86,38 +73,11 @@ public class SplashActivity extends MainActivity {
         });
     }
 
-    private class WebSocketServiceConnection implements ServiceConnection {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder binder) {
-            DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
-            WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
-            webSocketService = webSocketServiceBinder.getService();
-            mBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            DebugUtils.logDebug(TAG, "Disconnected from service " + name);
-            mBound = true;
-        }
-    }
-
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Intent intent = new Intent(this, WebSocketService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-    }
 
     @Override
     protected void onStop() {
         super.onStop();
-        // Unbind from the service
-        if (mBound) {
-            //  unbindService(mConnection);
-            mBound = false;
-        }
+
     }
 
     private ImageView getMenuItemLogOut() {

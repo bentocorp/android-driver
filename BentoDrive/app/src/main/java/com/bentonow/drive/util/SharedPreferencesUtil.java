@@ -18,6 +18,7 @@ public class SharedPreferencesUtil {
     public static final String TOKEN = "TOKEN"; //String
     public static final String USE_SAVED_SETTINGS = "USE_SAVED_SETTINGS"; //boolean
     public static final String IS_USER_LOG_IN = "IS_USER_LOG_IN"; //boolean
+    public static final String IS_APP_IN_FRONT = "IS_APP_IN_FRONT"; //boolean
 
 
     /**

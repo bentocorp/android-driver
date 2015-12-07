@@ -2,8 +2,11 @@ package com.bentonow.drive.util;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.support.v4.app.FragmentActivity;
 
+import com.bentonow.drive.Application;
+import com.bentonow.drive.R;
 import com.bentonow.drive.controller.ListOrderAssignedActivity;
 import com.bentonow.drive.controller.LogInActivity;
 import com.bentonow.drive.controller.OrderAssignedActivity;
@@ -13,7 +16,7 @@ import com.bentonow.drive.controller.OrderAssignedActivity;
  */
 public class BentoDriveUtil {
 
-    public static final boolean bIsKokushoTesting = false;
+    public static final boolean bIsKokushoTesting = true;
 
     public static void openListBentoActivity(FragmentActivity mContext) {
         Intent intent = new Intent(mContext, ListOrderAssignedActivity.class);
@@ -45,5 +48,38 @@ public class BentoDriveUtil {
 
     public static boolean isInvalidPhoneNumber(String sMessage) {
         return sMessage.contains("is not a mobile number") || sMessage.contains("is not a valid phone number");
+    }
+
+    public static void showInAppNotification(Context ctx, ConstantUtil.optTaskChanged optTaskChanged) {
+        Uri uriSound;
+        switch (optTaskChanged) {
+            case ASSIGN:
+                uriSound = Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/new_task");
+                if (SharedPreferencesUtil.getBooleanPreference(ctx, SharedPreferencesUtil.IS_APP_IN_FRONT)) {
+                    WidgetsUtils.createShortToast(R.string.notification_assigned_task);
+                    SoundUtil.playNotificationSound(uriSound);
+                } else {
+                    NotificationUtil.showBentoDriveNotification(ctx, R.string.notification_assigned_task, uriSound);
+                }
+                break;
+            case SWITCHED:
+                uriSound = Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/task_switched");
+                if (SharedPreferencesUtil.getBooleanPreference(ctx, SharedPreferencesUtil.IS_APP_IN_FRONT)) {
+                    WidgetsUtils.createShortToast(R.string.notification_change_task);
+                    SoundUtil.playNotificationSound(uriSound);
+                } else {
+                    NotificationUtil.showBentoDriveNotification(ctx, R.string.notification_change_task, uriSound);
+                }
+                break;
+            case REMOVED:
+                uriSound = Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/task_removed");
+                if (SharedPreferencesUtil.getBooleanPreference(ctx, SharedPreferencesUtil.IS_APP_IN_FRONT)) {
+                    WidgetsUtils.createShortToast(R.string.notification_un_assigned_task);
+                    SoundUtil.playNotificationSound(uriSound);
+                } else {
+                    NotificationUtil.showBentoDriveNotification(ctx, R.string.notification_un_assigned_task, uriSound);
+                }
+                break;
+        }
     }
 }
