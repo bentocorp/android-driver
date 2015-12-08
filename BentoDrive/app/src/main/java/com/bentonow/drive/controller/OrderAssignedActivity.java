@@ -431,7 +431,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 break;
             case R.id.container_call:
                 if (webSocketService.getListTask().get(0) != null && webSocketService.getListTask().get(0).getPhone() != null) {
-                    DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
+                    DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_phone), webSocketService.getListTask().get(0).getPhone());
                     mAcceptDialog.addCancelButton("Copy To Clipboard", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -450,7 +450,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 break;
             case R.id.container_map:
                 if (webSocketService.getListTask().get(0) != null) {
-                    DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
+                    DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_address), BentoDriveUtil.getFormatAddress(webSocketService.getListTask().get(0).getAddress()));
                     mAcceptDialog.addCancelButton("Show options", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -541,6 +541,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
             finish();
         } else {
             if (webSocketService != null && !sOrderId.equals("")) {
+                webSocketService.onNodeEventListener(OrderAssignedActivity.this);
                 if (!webSocketService.getListTask().get(0).getOrderId().equals(sOrderId)) {
                     finish();
                 }

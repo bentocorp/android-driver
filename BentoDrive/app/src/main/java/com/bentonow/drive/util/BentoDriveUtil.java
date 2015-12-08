@@ -10,6 +10,7 @@ import com.bentonow.drive.R;
 import com.bentonow.drive.controller.ListOrderAssignedActivity;
 import com.bentonow.drive.controller.LogInActivity;
 import com.bentonow.drive.controller.OrderAssignedActivity;
+import com.bentonow.drive.model.Address;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -81,5 +82,19 @@ public class BentoDriveUtil {
                 }
                 break;
         }
+    }
+
+    public static String getFormatAddress(Address mAddress) {
+        String sFormat = "";
+        try {
+            sFormat += mAddress.getResidence() + " ";
+            sFormat += mAddress.getStreet() + " ";
+            sFormat += mAddress.getCity() + ", ";
+            sFormat += mAddress.getRegion();
+            sFormat = sFormat.replace("null", "");
+        } catch (Exception ex) {
+            DebugUtils.logError("FormatAddress", ex);
+        }
+        return sFormat;
     }
 }

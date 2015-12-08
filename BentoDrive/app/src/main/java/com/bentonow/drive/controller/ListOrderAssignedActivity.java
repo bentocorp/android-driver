@@ -260,8 +260,10 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             BentoDriveUtil.disconnectUser(ListOrderAssignedActivity.this, SharedPreferencesUtil.getBooleanPreference((ListOrderAssignedActivity.this), SharedPreferencesUtil.USE_SAVED_SETTINGS));
             finish();
         } else {
-            if (webSocketService != null)
+            if (webSocketService != null) {
                 aListOder = webSocketService.getListTask();
+                webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
+            }
 
             NotificationUtil.cancelAllNotification(ListOrderAssignedActivity.this);
 
