@@ -94,6 +94,12 @@ public class BentoRestClient {
         getClient().get(BentoDriveAPI.getStatusOrderUrl(optStatusOrder, mOrderModel.getOrderId()), null, responseHandler);
     }
 
+    public static void getMinVersion(AsyncHttpResponseHandler responseHandler) {
+        RequestParams mParams = new RequestParams();
+        mParams.add("device_id", "android");
+        getClient().post(BentoDriveAPI.getMinVersionUrl(), mParams, responseHandler);
+    }
+
 /*    public static void post(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {
         Log.i(TAG, "[POST] " + getAbsoluteUrl(url));
         Log.i(TAG, "[params] " + (params != null ? params.toString() : "null"));

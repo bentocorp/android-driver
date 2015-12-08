@@ -40,6 +40,8 @@ public class MainParser {
     public static final String TAG_STATUS = "status";
     public static final String TAG_AFTER = "after";
     public static final String TAG_ORDER = "order";
+    public static final String TAG_MIN_VERSION = "min_version";
+    public static final String TAG_MIN_VERSION_URL = "min_version_url";
 
 //	public static final String TAG_= "";
 //	public static final String TAG_= "";

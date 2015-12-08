@@ -8,12 +8,19 @@ import android.widget.TextView;
 
 import com.bentonow.drive.R;
 import com.bentonow.drive.listener.DialogSelectListener;
+import com.bentonow.drive.model.VersionModel;
 import com.bentonow.drive.model.sugar.OrderItemDAO;
+import com.bentonow.drive.parse.jackson.MinVersionJsonParser;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
+import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.SocialNetworksUtil;
+import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.DialogMaterial;
+import com.loopj.android.http.TextHttpResponseHandler;
+
+import org.apache.http.Header;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -34,6 +41,9 @@ public class SplashActivity extends MainActivity {
         getTxtAppVersion().setText(AndroidUtil.getVersionName());
 
         OrderItemDAO.deleteAll();
+        SharedPreferencesUtil.setAppPreference(SplashActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
+
+        getMinVersion();
 
         new CountDownTimer(2 * 600, 1000) {
 
@@ -43,14 +53,45 @@ public class SplashActivity extends MainActivity {
 
             @Override
             public void onFinish() {
-                /*forceDownloadLink();*/
+                /*forceDownloadLink();
                 SharedPreferencesUtil.setAppPreference(SplashActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
-                BentoDriveUtil.openLogInActivity(SplashActivity.this);
+                BentoDriveUtil.openLogInActivity(SplashActivity.this);*/
+
             }
-        }.start();
+        };
     }
 
-    private void forceDownloadLink() {
+    private void getMinVersion() {
+        BentoRestClient.getMinVersion(new TextHttpResponseHandler() {
+            @SuppressWarnings("deprecation")
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                DebugUtils.logError(TAG, "Code: " + statusCode);
+                DebugUtils.logError(TAG, "Response: " + responseString);
+
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                try {
+                    VersionModel mVersion = MinVersionJsonParser.parseMinVersion(responseString);
+
+                    if (mVersion.getMin_version() != null && !mVersion.getMin_version().isEmpty() && !mVersion.getMin_version().equals("null") && !mVersion.getMin_version().equals(String.valueOf(AndroidUtil.getCodeName(SplashActivity.this)))) {
+                        forceDownloadLink(mVersion.getMin_version_url());
+                    } else {
+                        BentoDriveUtil.openLogInActivity(SplashActivity.this);
+                    }
+
+                } catch (Exception ex) {
+                    DebugUtils.logError(TAG, ex);
+                }
+            }
+
+        });
+    }
+
+    private void forceDownloadLink(final String sUrl) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -58,7 +99,7 @@ public class SplashActivity extends MainActivity {
                 mDialog.addAcceptButton("Download", new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        SocialNetworksUtil.openWebUrl(SplashActivity.this, "http://dl.dropboxusercontent.com/u/20121288/Apps-O-rama/BentoDrive/app-stage-debug.apk");
+                        SocialNetworksUtil.openWebUrl(SplashActivity.this, sUrl);
                     }
                 });
                 mDialog.addCancelButton("Cancel");

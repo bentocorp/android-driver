@@ -20,6 +20,7 @@ public class BentoDriveAPI {
     public final static String URL_GET_STATUS_REJECT = "/api/order/reject?token=%s&orderId=%s";
     public final static String URL_GET_STATUS_ARRIVED = "/api/sms/bento-here?token=%s&orderId=%s";
     public final static String URL_GET_STATUS_COMPLETE = "/api/order/complete?token=%s&orderId=%s";
+    public final static String URL_POST_MIN_VERSION = "/admin/getForcedUpdateInfo";
 
     public static String getNodeUrl(Context mContext) {
         return mContext.getString(R.string.node_url);
@@ -66,6 +67,12 @@ public class BentoDriveAPI {
             default:
                 sUrl = "";
         }
+        return sUrl;
+    }
+
+    public static String getMinVersionUrl() {
+        String sUrl = getHoustonUrl(Application.getInstance()) + URL_POST_MIN_VERSION;
+        DebugUtils.logDebug("URL: " + sUrl);
         return sUrl;
     }
 
