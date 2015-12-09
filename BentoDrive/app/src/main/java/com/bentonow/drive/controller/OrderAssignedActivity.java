@@ -289,7 +289,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                         @Override
                                         public void run() {
                                             webSocketService.getListTask().get(0).setStatus("ARRIVED");
-                                            SoundUtil.playNotificationSound(Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/notified"));
+                                            SoundUtil.playNotificationSound(Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/invalid_phone"));
                                             updateUI();
                                         }
                                     });

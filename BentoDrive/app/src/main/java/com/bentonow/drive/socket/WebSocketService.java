@@ -19,6 +19,7 @@ import com.bentonow.drive.util.ConstantUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.GoogleLocationUtil;
 import com.bentonow.drive.util.SharedPreferencesUtil;
+import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoDriveAPI;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -342,12 +343,12 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             mSocket.disconnect();
         }
 
-        GoogleLocationUtil.stopLocationUpdates(WebSocketService.this);
+        GoogleLocationUtil.stopLocationUpdates();
     }
 
 
     public boolean isConnectedUser() {
-        if (mSocket != null && mSocket.connected()) {
+        if (mSocket != null && mSocket.connected() && SharedPreferencesUtil.getBooleanPreference(WebSocketService.this, SharedPreferencesUtil.IS_USER_LOG_IN)) {
             return true;
         } else {
             return false;
@@ -376,12 +377,14 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                         SocketResponseModel mResponse = new ObjectMapper().readValue(args[0].toString(), SocketResponseModel.class);
                         if (mResponse.getCode() != 0) {
                             DebugUtils.logError(TAG, "onLocationUpdated: " + mResponse.getMsg());
+                            WidgetsUtils.createShortToast("onLocationUpdated: " + mResponse.getMsg());
                         } else {
                             String sResponse = mResponse.getRet();
                             DebugUtils.logDebug(TAG, "onLocationUpdated: " + sResponse);
                         }
                     } catch (Exception e) {
                         DebugUtils.logError(TAG, "onLocationUpdated: " + e.toString());
+                        WidgetsUtils.createShortToast("onLocationUpdated: " + e.toString());
                     }
                 }
             });

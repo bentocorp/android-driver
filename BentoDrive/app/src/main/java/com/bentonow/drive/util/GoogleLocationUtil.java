@@ -21,39 +21,41 @@ public class GoogleLocationUtil {
     private static LocationRequest mLocationRequest;
     private static GoogleApiClient mGoogleApiClient;
 
+    public static void connectGoogleApi(final Context mContext, final UpdateLocationListener mListener) {
+        mGoogleApiClient = new GoogleApiClient.Builder(mContext)
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(Bundle bundle) {
+                        DebugUtils.logDebug(TAG, "buildGoogleApiClient() onConnected:");
+                        if (mListener != null) {
+                            startLocationUpdates(mContext, mListener);
+                            mListener.onLocationUpdated(getCurrentLocation());
+                        } else
+                            WidgetsUtils.createLongToast("buildGoogleApiClient() onConnected: Listener Lost");
+                    }
 
-    public static synchronized GoogleApiClient getGoogleApiClient(final Context mContext, final UpdateLocationListener mListener) {
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(mContext)
-                    .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                        @Override
-                        public void onConnected(Bundle bundle) {
-                            DebugUtils.logDebug(TAG, "buildGoogleApiClient() onConnected:");
-                            if (mListener != null)
-                                startLocationUpdates(mContext, mListener);
-                        }
-
-                        @Override
-                        public void onConnectionSuspended(int i) {
-                            DebugUtils.logDebug(TAG, "buildGoogleApiClient() onConnectionSuspended: " + i);
-                        }
-                    })
-                    .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                        @Override
-                        public void onConnectionFailed(ConnectionResult connectionResult) {
-                            DebugUtils.logDebug(TAG, "buildGoogleApiClient() " + connectionResult.toString());
-                        }
-                    })
-                    .addApi(LocationServices.API)
-                    .build();
-            mGoogleApiClient.connect();
-        }
-        return mGoogleApiClient;
+                    @Override
+                    public void onConnectionSuspended(int i) {
+                        DebugUtils.logDebug(TAG, "buildGoogleApiClient() onConnectionSuspended: " + i);
+                        WidgetsUtils.createLongToast("buildGoogleApiClient() onConnectionSuspended: " + i);
+                    }
+                })
+                .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                    @Override
+                    public void onConnectionFailed(ConnectionResult connectionResult) {
+                        DebugUtils.logDebug(TAG, "buildGoogleApiClient() " + connectionResult.toString());
+                        WidgetsUtils.createLongToast("onConnectionFailed() " + connectionResult.toString());
+                    }
+                })
+                .addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
     }
 
+
     public static void startLocationUpdates(final Context mContext, final UpdateLocationListener mListener) {
-        if (getGoogleApiClient(mContext, mListener).isConnected())
-            LocationServices.FusedLocationApi.requestLocationUpdates(getGoogleApiClient(mContext, null), getLocationRequest(), new LocationListener() {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, getLocationRequest(), new LocationListener() {
                 @Override
                 public void onLocationChanged(Location mCurrentLocation) {
                     if (mListener != null)
@@ -61,16 +63,20 @@ public class GoogleLocationUtil {
 
                 }
             });
+        } else
+            connectGoogleApi(mContext, mListener);
     }
 
-    public static void stopLocationUpdates(final Context mContext) {
-        if (getGoogleApiClient(mContext, null).isConnected())
-            LocationServices.FusedLocationApi.removeLocationUpdates(getGoogleApiClient(mContext, null), new LocationListener() {
+    public static void stopLocationUpdates() {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, new LocationListener() {
                 @Override
                 public void onLocationChanged(Location mLocation) {
                     DebugUtils.logDebug(TAG, "stopLocationUpdates() onLocationChanged: " + mLocation.toString());
                 }
             });
+            mGoogleApiClient.disconnect();
+        }
     }
 
 
@@ -84,10 +90,10 @@ public class GoogleLocationUtil {
         return mLocationRequest;
     }
 
-    public static Location getCurrentLocation(final Context mContext) {
+    public static Location getCurrentLocation() {
         Location mCurrentLocation = null;
-        if (getGoogleApiClient(mContext, null).isConnected())
-            mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(getGoogleApiClient(mContext, null));
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected())
+            mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
         return mCurrentLocation;
     }

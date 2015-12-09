@@ -20,6 +20,7 @@ import com.bentonow.drive.listener.RecyclerListListener;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.parse.jackson.BentoOrderJsonParser;
 import com.bentonow.drive.socket.WebSocketService;
+import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.NotificationUtil;
@@ -272,6 +273,10 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     }
 
+    @Override
+    public void onBackPressed() {
+        AndroidUtil.backToAndroidMenu(ListOrderAssignedActivity.this);
+    }
 
     private ProgressDialog getLoaderDialog() {
         if (mLoaderDialog == null)

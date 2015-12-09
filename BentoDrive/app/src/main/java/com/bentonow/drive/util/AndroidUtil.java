@@ -25,6 +25,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import com.bentonow.drive.Application;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -355,4 +357,20 @@ public class AndroidUtil {
         String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
+
+    public static boolean isGooglePlayServicesAvailable(FragmentActivity mContext) {
+        boolean bIsAvailable;
+        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(mContext);
+        if (resultCode == ConnectionResult.SUCCESS) {
+            bIsAvailable = true;
+        } else {
+            bIsAvailable = false;
+            if (resultCode == ConnectionResult.SERVICE_MISSING ||
+                    resultCode == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED ||
+                    resultCode == ConnectionResult.SERVICE_DISABLED)
+                GooglePlayServicesUtil.getErrorDialog(resultCode, mContext, 1).show();
+        }
+        return bIsAvailable;
+    }
+
 }
