@@ -43,22 +43,13 @@ public class SplashActivity extends MainActivity {
         OrderItemDAO.deleteAll();
         SharedPreferencesUtil.setAppPreference(SplashActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
 
-        getMinVersion();
 
-        new CountDownTimer(2 * 600, 1000) {
+    }
 
-            @Override
-            public void onTick(long millisUntilFinished) {
-            }
-
-            @Override
-            public void onFinish() {
-                /*forceDownloadLink();
-                SharedPreferencesUtil.setAppPreference(SplashActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
-                BentoDriveUtil.openLogInActivity(SplashActivity.this);*/
-
-            }
-        };
+    private void nextScreen() {
+        if (AndroidUtil.isGooglePlayServicesAvailable(SplashActivity.this)) {
+            getMinVersion();
+        }
     }
 
     private void getMinVersion() {
@@ -76,7 +67,8 @@ public class SplashActivity extends MainActivity {
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
                 try {
                     VersionModel mVersion = MinVersionJsonParser.parseMinVersion(responseString);
-
+                    // mVersion.setMin_version("2");
+                    //mVersion.setMin_version_url("http://s3-us-west-1.amazonaws.com/bentonow-assets/android_driver_app/AndroidDrive.html");
                     if (mVersion.getMin_version() != null && !mVersion.getMin_version().isEmpty() && !mVersion.getMin_version().equals("null") && !mVersion.getMin_version().equals(String.valueOf(AndroidUtil.getCodeName(SplashActivity.this)))) {
                         forceDownloadLink(mVersion.getMin_version_url());
                     } else {
@@ -114,6 +106,26 @@ public class SplashActivity extends MainActivity {
         });
     }
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        new CountDownTimer(1 * 600, 1000) {
+
+            @Override
+            public void onTick(long millisUntilFinished) {
+            }
+
+            @Override
+            public void onFinish() {
+                /*forceDownloadLink();
+                SharedPreferencesUtil.setAppPreference(SplashActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
+                BentoDriveUtil.openLogInActivity(SplashActivity.this);*/
+                nextScreen();
+            }
+        }.start();
+
+    }
 
     @Override
     protected void onStop() {
