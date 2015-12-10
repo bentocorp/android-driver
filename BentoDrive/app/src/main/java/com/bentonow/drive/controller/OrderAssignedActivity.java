@@ -130,6 +130,17 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         webSocketService.saveListTask(webSocketService.getListTask());
     }
 
+    private void openInvalidPhoneNumberDialog() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_invalid_phone), getString(R.string.dialog_title_invalid_address));
+                mAcceptDialog.addAcceptButton("Roger that!");
+                mAcceptDialog.show();
+            }
+        });
+    }
+
     private void acceptOrder() {
 
         showLoader("Progressing....");
@@ -173,6 +184,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                             webSocketService.getListTask().get(0).setStatus("ACCEPTED");
                                             SoundUtil.playNotificationSound(Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/lets_drive"));
                                             updateUI();
+                                            openInvalidPhoneNumberDialog();
                                         }
                                     });
                                 } else
@@ -232,6 +244,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                         public void run() {
                                             webSocketService.getListTask().get(0).setStatus("REJECTED");
                                             updateUI();
+
                                         }
                                     });
                                 } else
@@ -289,8 +302,9 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                         @Override
                                         public void run() {
                                             webSocketService.getListTask().get(0).setStatus("ARRIVED");
-                                            SoundUtil.playNotificationSound(Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/invalid_phone"));
+                                            //SoundUtil.playNotificationSound(Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/invalid_phone"));
                                             updateUI();
+                                            openInvalidPhoneNumberDialog();
                                         }
                                     });
                                 } else

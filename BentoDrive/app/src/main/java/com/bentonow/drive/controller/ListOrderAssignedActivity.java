@@ -154,15 +154,11 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             @SuppressWarnings("deprecation")
             @Override
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
-                try {
-                    DebugUtils.logDebug(TAG, "Order: " + responseString);
-                    aListOder = BentoOrderJsonParser.parseBentoListOrder(responseString);
 
-                    webSocketService.saveListTask(aListOder);
+                DebugUtils.logDebug(TAG, "Order: " + responseString);
+                aListOder = BentoOrderJsonParser.parseBentoListOrder(responseString);
 
-                } catch (Exception ex) {
-                    DebugUtils.logError(TAG, ex);
-                }
+                webSocketService.saveListTask(aListOder);
 
                 hideLoader();
 
