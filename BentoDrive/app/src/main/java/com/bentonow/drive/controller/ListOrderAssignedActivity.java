@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
@@ -15,8 +16,8 @@ import android.widget.TextView;
 import com.bentonow.drive.R;
 import com.bentonow.drive.controller.adapter.OrderListAdapter;
 import com.bentonow.drive.dialog.ProgressDialog;
-import com.bentonow.drive.listener.NodeEventsListener;
 import com.bentonow.drive.listener.RecyclerListListener;
+import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.parse.jackson.BentoOrderJsonParser;
 import com.bentonow.drive.socket.WebSocketService;
@@ -25,6 +26,7 @@ import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.NotificationUtil;
 import com.bentonow.drive.util.SharedPreferencesUtil;
+import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.DialogMaterial;
 import com.loopj.android.http.TextHttpResponseHandler;
@@ -37,13 +39,14 @@ import java.util.List;
 /**
  * Created by Jose Torres on 11/10/15.
  */
-public class ListOrderAssignedActivity extends MainActivity implements View.OnClickListener, RecyclerListListener, NodeEventsListener {
+public class ListOrderAssignedActivity extends MainActivity implements View.OnClickListener, RecyclerListListener, WebSocketEventListener {
 
     public static final String TAG = "ListOrderAssignedActivity";
     //public static final int TAG_ID = 2;
 
     private ImageView imgMenuItemLogOut;
     private TextView txtEmptyView;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     private RecyclerView mRecyclerView;
     private OrderListAdapter mAdapter;
@@ -56,6 +59,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     private List<OrderItemModel> aListOder = new ArrayList<>();
 
     private boolean mBound = false;
+    private boolean mReconnecting = false;
 
     private boolean mIsFirstTime;
 
@@ -66,9 +70,16 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
         getMenuItemLogOut().setOnClickListener(this);
 
+        getSwipeRefreshLayout().setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                getAssignedOrders();
+            }
+        });
+
         getListOrder().setAdapter(getListAdapter());
 
-        getLoaderDialog().show();
+        showLoader("Downloading...");
 
         mIsFirstTime = true;
 
@@ -85,7 +96,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                 @Override
                 public void run() {
                     getTxtEmptyView().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.VISIBLE : View.GONE);
-                    getListOrder().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.GONE : View.VISIBLE);
+                    // getListOrder().setVisibility(getListAdapter().aListOrder.isEmpty() ? View.GONE : View.VISIBLE);
                     getListAdapter().notifyDataSetChanged();
                 }
             });
@@ -97,14 +108,25 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     }
 
+    private void showLoader(final String sMessage) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mLoaderDialog = new ProgressDialog(ListOrderAssignedActivity.this, sMessage);
+                mLoaderDialog.show();
+            }
+        });
+    }
+
     private void hideLoader() {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (mIsFirstTime) {
-                    getLoaderDialog().dismiss();
-                    mIsFirstTime = false;
-                }
+                getSwipeRefreshLayout().setRefreshing(false);
+                if (mLoaderDialog != null)
+                    mLoaderDialog.dismiss();
+
+                mIsFirstTime = false;
             }
         });
     }
@@ -116,6 +138,11 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
                 DebugUtils.logError(TAG, "Code: " + statusCode);
                 DebugUtils.logError(TAG, "Response: " + responseString);
+
+                if (responseString == null || responseString.equals("null"))
+                    WidgetsUtils.createShortToast("There was a problem pull to refresh");
+                else
+                    WidgetsUtils.createShortToast("There was a problem pull to refresh");
 
                 webSocketService.saveListTask(aListOder);
 
@@ -152,7 +179,8 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
             WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
             webSocketService = webSocketServiceBinder.getService();
-            webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
+            webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
+            webSocketService.onNodeEventListener();
             aListOder = webSocketService.getListTask();
             mBound = true;
 
@@ -172,7 +200,38 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
 
     @Override
-    public void onPush(OrderItemModel mOrder) {
+    public void onSuccessfulConnection() {
+    }
+
+    @Override
+    public void onConnectionError(String sReason) {
+    }
+
+    @Override
+    public void onConnectionLost(boolean bPurpose) {
+        if (!bPurpose && !mReconnecting) {
+            mReconnecting = true;
+            showLoader("Connecting...");
+        }
+    }
+
+    @Override
+    public void onAuthenticationSuccess(String token) {
+        if (mReconnecting) {
+            hideLoader();
+            WidgetsUtils.createShortToast("Connection Restored");
+        }
+
+        mReconnecting = false;
+    }
+
+    @Override
+    public void onAuthenticationFailure(String reason) {
+        BentoDriveUtil.disconnectUser(ListOrderAssignedActivity.this, true);
+    }
+
+    @Override
+    public void onDisconnect(boolean disconnectingPurposefully) {
     }
 
     @Override
@@ -263,7 +322,8 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         } else {
             if (webSocketService != null) {
                 aListOder = webSocketService.getListTask();
-                webSocketService.onNodeEventListener(ListOrderAssignedActivity.this);
+                webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
+                webSocketService.onNodeEventListener();
             }
 
             NotificationUtil.cancelAllNotification(ListOrderAssignedActivity.this);
@@ -278,11 +338,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         AndroidUtil.backToAndroidMenu(ListOrderAssignedActivity.this);
     }
 
-    private ProgressDialog getLoaderDialog() {
-        if (mLoaderDialog == null)
-            mLoaderDialog = new ProgressDialog(ListOrderAssignedActivity.this, "Downloading...");
-        return mLoaderDialog;
-    }
 
     private ImageView getMenuItemLogOut() {
         if (imgMenuItemLogOut == null)
@@ -294,6 +349,12 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         if (txtEmptyView == null)
             txtEmptyView = (TextView) findViewById(R.id.txt_empty_list);
         return txtEmptyView;
+    }
+
+    private SwipeRefreshLayout getSwipeRefreshLayout() {
+        if (swipeRefreshLayout == null)
+            swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh_layout);
+        return swipeRefreshLayout;
     }
 
 

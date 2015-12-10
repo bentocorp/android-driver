@@ -23,7 +23,7 @@ public class LogInAsyncTask extends AsyncTask<Void, Void, Void> {
 
     @Override
     protected Void doInBackground(Void... arg0) {
-        webSocketService.connectWebSocket(sUsername, sPassword, mListener);
+        webSocketService.connectWebSocket(sUsername, sPassword);
 
         return null;
     }

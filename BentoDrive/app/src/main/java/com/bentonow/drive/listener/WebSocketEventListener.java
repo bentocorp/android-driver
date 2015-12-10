@@ -1,27 +1,33 @@
 package com.bentonow.drive.listener;
 
-import org.bentocorp.api.ws.Push;
+import com.bentonow.drive.model.OrderItemModel;
+
+import java.util.List;
 
 /**
  * Created by Jose Torres on 11/10/15.
  */
-public abstract class WebSocketEventListener {
+public interface WebSocketEventListener {
 
-    public void onSuccessfulConnection() {
-    }
+    void onSuccessfulConnection();
 
-    public void onConnectionError(String reason) {
-    }
+    void onConnectionError(String sReason);
 
-    public void onAuthenticationSuccess(String token) {
-    }
+    void onConnectionLost(boolean bPurpose);
 
-    public void onAuthenticationFailure(String reason) {
-    }
+    void onAuthenticationSuccess(String token);
 
-    public void onDisconnect(boolean disconnectingPurposefully) {
-    }
+    void onAuthenticationFailure(String reason);
 
-    public void onPush(Push push) {
-    }
+    void onDisconnect(boolean disconnectingPurposefully);
+
+    void onAssign(List<OrderItemModel> mNewList, boolean bRefresh);
+
+
+    void onUnassign(List<OrderItemModel> mNewList, boolean bRefresh);
+
+
+    void onReprioritize(List<OrderItemModel> mNewList, boolean bRefresh);
+
+
 }

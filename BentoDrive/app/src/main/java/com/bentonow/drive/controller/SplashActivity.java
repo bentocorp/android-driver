@@ -3,6 +3,7 @@ package com.bentonow.drive.controller;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -16,6 +17,7 @@ import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.SocialNetworksUtil;
+import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.DialogMaterial;
 import com.loopj.android.http.TextHttpResponseHandler;
@@ -31,7 +33,7 @@ public class SplashActivity extends MainActivity {
 
     private ImageView imgMenuItemLogOut;
     private TextView txtAppVersion;
-
+    private Button btnRetry;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +45,12 @@ public class SplashActivity extends MainActivity {
         OrderItemDAO.deleteAll();
         SharedPreferencesUtil.setAppPreference(SplashActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
 
+        getBtnRetry().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getMinVersion();
+            }
+        });
 
     }
 
@@ -59,6 +67,18 @@ public class SplashActivity extends MainActivity {
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
                 DebugUtils.logError(TAG, "Code: " + statusCode);
                 DebugUtils.logError(TAG, "Response: " + responseString);
+
+                if (responseString == null || responseString.equals("null"))
+                    WidgetsUtils.createShortToast(R.string.error_failed_no_internet);
+                else
+                    WidgetsUtils.createShortToast(responseString);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        getBtnRetry().setVisibility(View.VISIBLE);
+                    }
+                });
 
             }
 
@@ -139,11 +159,16 @@ public class SplashActivity extends MainActivity {
         return imgMenuItemLogOut;
     }
 
-
     private TextView getTxtAppVersion() {
         if (txtAppVersion == null)
             txtAppVersion = (TextView) findViewById(R.id.txt_app_version);
         return txtAppVersion;
+    }
+
+    private Button getBtnRetry() {
+        if (btnRetry == null)
+            btnRetry = (Button) findViewById(R.id.btn_retry);
+        return btnRetry;
     }
 
 

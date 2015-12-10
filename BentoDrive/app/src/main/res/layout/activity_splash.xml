@@ -28,4 +28,16 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="20dp"
         android:background="@drawable/logo" />
+
+    <Button
+        android:id="@+id/btn_retry"
+        android:layout_width="100dp"
+        android:layout_height="48dp"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@+id/txt_app_version"
+        android:layout_toRightOf="@+id/txt_app_version"
+        android:background="@drawable/button_rounded_white"
+        android:text="RETRY"
+        android:textColor="@color/white"
+        android:visibility="gone" />
 </RelativeLayout>

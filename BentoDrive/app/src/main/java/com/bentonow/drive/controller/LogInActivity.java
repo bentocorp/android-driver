@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.view.View;
 import android.widget.Button;
@@ -13,7 +14,9 @@ import android.widget.EditText;
 import com.bentonow.drive.R;
 import com.bentonow.drive.dialog.ProgressDialog;
 import com.bentonow.drive.listener.WebSocketEventListener;
+import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.socket.WebSocketService;
+import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.LocationUtils;
@@ -21,10 +24,12 @@ import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.widget.material.DialogMaterial;
 
+import java.util.List;
+
 /**
  * Created by Jose Torres on 11/10/15.
  */
-public class LogInActivity extends MainActivity implements View.OnClickListener {
+public class LogInActivity extends MainActivity implements View.OnClickListener, WebSocketEventListener {
 
     public static final String TAG = "LogInActivity";
 
@@ -76,56 +81,33 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
 
     private void logInDrive() {
         if (mBound) {
-            if (!webSocketService.isConnectedUser()) {
+            if (AndroidUtil.isNetworkAvailable(LogInActivity.this)) {
                 getLoaderDialog().show();
+                startLogInCountDown();
 
-                DebugUtils.logDebug(TAG, "Attempting to connect to node");
+                webSocketService.connectWebSocket(getEditUsername().getText().toString(), getEditPassword().getText().toString());
+            } else
+                WidgetsUtils.createShortToast(R.string.error_failed_no_internet);
+        }
+    }
 
-                webSocketService.connectWebSocket(getEditUsername().getText().toString(), getEditPassword().getText().toString(), new WebSocketEventListener() {
-                    @Override
-                    public void onAuthenticationSuccess(String sToken) {
+    private void startLogInCountDown() {
+        new CountDownTimer(15000, 1000) {
 
-                        if (!bAlreadyOpen) {
-                            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
-                            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
-                            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, true);
+            @Override
+            public void onTick(long millisUntilFinished) {
+            }
 
-                            DebugUtils.logDebug(TAG, "Token: " + sToken);
-                            hideDialogs();
-
-                            BentoDriveUtil.openListBentoActivity(LogInActivity.this);
-
-                            bAlreadyOpen = true;
-                        }
-
-                    }
-
-                    @Override
-                    public void onAuthenticationFailure(String sReason) {
-                        hideDialogs();
-
-                        if (sReason.contains("database query came back empty"))
-                            WidgetsUtils.createShortToast(R.string.error_failed_authenticate);
-                        else
-                            WidgetsUtils.createShortToast("There was a problem: " + sReason);
-
-                        bAlreadyOpen = false;
-                    }
-
-                    @Override
-                    public void onDisconnect(boolean disconnectingPurposefully) {
-                        hideDialogs();
-
-                        if (!disconnectingPurposefully)
-                            WidgetsUtils.createShortToast(R.string.error_node_connection);
-                    }
-                });
-
-            } else {
-                webSocketService.disconnectWebSocket();
+            @Override
+            public void onFinish() {
+                if (!bAlreadyOpen && webSocketService != null) {
+                    hideDialogs();
+                    webSocketService.disconnectWebSocket();
+                    WidgetsUtils.createShortToast(R.string.error_node_connection);
+                }
 
             }
-        }
+        }.start();
     }
 
     private void hideDialogs() {
@@ -137,12 +119,79 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
         });
     }
 
+    @Override
+    public void onSuccessfulConnection() {
+
+    }
+
+    @Override
+    public void onConnectionError(String sReason) {
+
+    }
+
+    @Override
+    public void onConnectionLost(boolean bPurpose) {
+
+    }
+
+    @Override
+    public void onAuthenticationSuccess(String sToken) {
+        if (!bAlreadyOpen) {
+            bAlreadyOpen = true;
+            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
+            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
+            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, true);
+            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.USE_SAVED_SETTINGS, true);
+
+            DebugUtils.logDebug(TAG, "Token: " + sToken);
+            hideDialogs();
+
+            BentoDriveUtil.openListBentoActivity(LogInActivity.this);
+        }
+
+    }
+
+    @Override
+    public void onAuthenticationFailure(String sReason) {
+        hideDialogs();
+
+        if (sReason.contains("database query came back empty"))
+            WidgetsUtils.createShortToast(R.string.error_failed_authenticate);
+        else
+            WidgetsUtils.createShortToast("There was a problem: " + sReason);
+
+    }
+
+    @Override
+    public void onDisconnect(boolean disconnectingPurposefully) {
+        hideDialogs();
+
+        if (!disconnectingPurposefully)
+            WidgetsUtils.createShortToast(R.string.error_node_connection);
+    }
+
+    @Override
+    public void onAssign(List<OrderItemModel> mNewList, boolean bRefresh) {
+
+    }
+
+    @Override
+    public void onUnassign(List<OrderItemModel> mNewList, boolean bRefresh) {
+
+    }
+
+    @Override
+    public void onReprioritize(List<OrderItemModel> mNewList, boolean bRefresh) {
+
+    }
+
     private class WebSocketServiceConnection implements ServiceConnection {
         @Override
         public void onServiceConnected(ComponentName name, IBinder binder) {
             DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
             WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
             webSocketService = webSocketServiceBinder.getService();
+            webSocketService.setWebSocketLister(LogInActivity.this);
             mBound = true;
         }
 
@@ -204,7 +253,7 @@ public class LogInActivity extends MainActivity implements View.OnClickListener 
 
     private ProgressDialog getLoaderDialog() {
         if (mLoaderDialog == null)
-            mLoaderDialog = new ProgressDialog(LogInActivity.this, "LogIn");
+            mLoaderDialog = new ProgressDialog(LogInActivity.this, "Logging in");
         return mLoaderDialog;
     }
 

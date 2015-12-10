@@ -7,7 +7,6 @@ import android.os.Binder;
 import android.os.IBinder;
 
 import com.bentonow.drive.Application;
-import com.bentonow.drive.listener.NodeEventsListener;
 import com.bentonow.drive.listener.UpdateLocationListener;
 import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.model.OrderItemModel;
@@ -54,11 +53,12 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     private boolean connecting = false;
     private boolean disconnectingPurposefully = false;
 
-
     private List<OrderItemModel> aListTask;
 
     private String sUsername = "";
     private String sPassword = "";
+
+    private WebSocketEventListener mSocketListener;
 
     @Override
     public void onCreate() {
@@ -67,8 +67,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         aListTask = new ArrayList<>();
     }
 
-
-    public void connectWebSocket(String username, String password, WebSocketEventListener mListener) {
+    public void connectWebSocket(String username, String password) {
         if (connecting) {
             DebugUtils.logDebug(TAG, "Connection in progress");
         } else if (mSocket != null && mSocket.connected()) {
@@ -99,22 +98,23 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
                 //opts.timeout = 5000;
                 mSocket = IO.socket(BentoDriveAPI.getNodeUrl(WebSocketService.this), opts);
-                socketAuthenticate(username, password, mListener);
+                socketAuthenticate(username, password);
                 mSocket.connect();
             } catch (Exception e) {
                 DebugUtils.logError(TAG, "connectWebSocket: " + e.toString());
-                if (mListener != null)
-                    mListener.onConnectionError(e.getMessage());
+                if (mSocketListener != null)
+                    mSocketListener.onConnectionError(e.getMessage());
             }
         }
     }
 
 
-    public void socketAuthenticate(final String sUser, final String sPass, final WebSocketEventListener mListener) {
+    public void socketAuthenticate(final String sUser, final String sPass) {
         mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
             @Override
             public void call(Object[] args) {
-                mListener.onSuccessfulConnection();
+                if (mSocketListener != null)
+                    mSocketListener.onSuccessfulConnection();
                 try {
                     String sPath = BentoDriveAPI.getAuthenticationUrl(sUser, sPass);
                     DebugUtils.logDebug(TAG, "Connecting: " + sPath);
@@ -125,8 +125,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                 APIResponse<Authenticate> res = mapper.readValue(args[0].toString(), new TypeReference<APIResponse<Authenticate>>() {
                                 });
                                 if (res.code != 0) {
-                                    if (mListener != null)
-                                        mListener.onAuthenticationFailure(res.msg);
+                                    if (mSocketListener != null)
+                                        mSocketListener.onAuthenticationFailure(res.msg);
                                     DebugUtils.logError(TAG, "socketAuthenticate: " + res.msg);
                                     mSocket.disconnect();
                                 } else {
@@ -138,8 +138,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                     sUsername = sUser;
                                     sPassword = sPass;
 
-                                    if (mListener != null)
-                                        mListener.onAuthenticationSuccess(sToken);
+                                    if (mSocketListener != null)
+                                        mSocketListener.onAuthenticationSuccess(sToken);
 
                                     Application.getInstance().handlerPost(new Runnable() {
                                         @Override
@@ -149,16 +149,16 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                     });
                                 }
                             } catch (Exception e) {
-                                if (mListener != null)
-                                    mListener.onAuthenticationFailure(e.getMessage());
+                                if (mSocketListener != null)
+                                    mSocketListener.onAuthenticationFailure(e.getMessage());
                                 DebugUtils.logError(TAG, "socketAuthenticate: " + e.toString());
                                 mSocket.disconnect();
                             }
                         }
                     });
                 } catch (Exception e) {
-                    if (mListener != null)
-                        mListener.onConnectionError(e.getMessage());
+                    if (mSocketListener != null)
+                        mSocketListener.onConnectionError(e.getMessage());
                     DebugUtils.logError(TAG, "disconnecting-onemittig");
                     mSocket.disconnect();
                 }
@@ -168,16 +168,22 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             @Override
             public void call(Object[] args) {
                 DebugUtils.logError(TAG, "connection-error: " + args[0].toString());
-                if (mListener != null)
-                    mListener.onConnectionError(args[0].toString());
+                if (mSocketListener != null)
+                    mSocketListener.onConnectionLost(disconnectingPurposefully);
 
+                if (disconnectingPurposefully)
+                    mSocket.disconnect();
+                else
+                    mSocketListener.onConnectionLost(false);
             }
         });
         mSocket.on(Socket.EVENT_CONNECT_TIMEOUT, new Emitter.Listener() {
             @Override
             public void call(Object[] args) {
-                if (mListener != null)
-                    mListener.onConnectionError("Error - WebSocket connection timeout");
+                if (mSocketListener != null)
+                    mSocketListener.onConnectionError("Error - WebSocket connection timeout");
+
+                mSocket.disconnect();
 
                 DebugUtils.logError(TAG, "disconnecting-connect-timeout");
             }
@@ -186,14 +192,15 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             @Override
             public void call(Object[] args) {
                 connecting = false;
-                if (mListener != null)
-                    mListener.onDisconnect(disconnectingPurposefully);
+                if (mSocketListener != null)
+                    mSocketListener.onDisconnect(disconnectingPurposefully);
+
                 disconnectingPurposefully = false;
             }
         });
     }
 
-    public void onNodeEventListener(final NodeEventsListener mListener) {
+    public void onNodeEventListener() {
         if (mSocket != null) {
             removeNodeListener();
             DebugUtils.logDebug(TAG, "Push: Subscribed");
@@ -239,8 +246,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
                                 saveListTask(aListTask);
 
-                                if (mListener != null)
-                                    mListener.onAssign(aListTask, bRefresh);
+                                if (mSocketListener != null)
+                                    mSocketListener.onAssign(aListTask, bRefresh);
 
                                 break;
                             case "UNASSIGN":
@@ -260,8 +267,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
                                 saveListTask(aListTask);
 
-                                if (mListener != null)
-                                    mListener.onUnassign(aListTask, bRefresh);
+                                if (mSocketListener != null)
+                                    mSocketListener.onUnassign(aListTask, bRefresh);
                                 break;
                             case "REPRIORITIZE":
                                 if (aListTask.isEmpty()) {
@@ -291,8 +298,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
                                 saveListTask(aListTask);
 
-                                if (mListener != null)
-                                    mListener.onReprioritize(aListTask, bRefresh);
+                                if (mSocketListener != null)
+                                    mSocketListener.onReprioritize(aListTask, bRefresh);
                                 break;
                             default:
                                 DebugUtils.logDebug(TAG, "OrderType: Unhandled " + mOrder.getOrderType());
@@ -331,6 +338,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
     public void disconnectWebSocket() {
         disconnectingPurposefully = true;
+        connecting = false;
         SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
         sUsername = "";
         sPassword = "";
@@ -340,12 +348,12 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         if (mSocket != null) {
             DebugUtils.logDebug(TAG, "disconnecting");
             removeNodeListener();
+            mSocket.off();
             mSocket.disconnect();
         }
 
         GoogleLocationUtil.stopLocationUpdates();
     }
-
 
     public boolean isConnectedUser() {
         if (mSocket != null && mSocket.connected() && SharedPreferencesUtil.getBooleanPreference(WebSocketService.this, SharedPreferencesUtil.IS_USER_LOG_IN)) {
@@ -365,6 +373,10 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     public void saveListTask(List<OrderItemModel> aListNewTask) {
         OrderItemDAO.saveAll(aListNewTask);
         aListTask = OrderItemDAO.getAllTask();
+    }
+
+    public void setWebSocketLister(WebSocketEventListener mListener) {
+        mSocketListener = mListener;
     }
 
     @Override

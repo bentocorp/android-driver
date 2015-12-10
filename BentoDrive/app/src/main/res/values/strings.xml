@@ -6,6 +6,7 @@
     <string name="dialog_msg_login_empty">Please enter both your username and password</string>
     <string name="error_failed_authenticate">Failed to authenticate</string>
     <string name="error_node_connection">Failed to connect</string>
+    <string name="error_failed_no_internet">Please connect to the internet</string>
     <string name="error_reconnect">Trying to connect again</string>
     <string name="dialog_title_log_out">Log Out</string>
     <string name="dialog_msg_log_out">Save login info?</string>
