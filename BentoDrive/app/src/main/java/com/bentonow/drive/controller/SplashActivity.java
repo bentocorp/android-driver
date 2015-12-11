@@ -86,10 +86,11 @@ public class SplashActivity extends MainActivity {
             @Override
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
                 try {
+                    DebugUtils.logDebug(TAG, responseString);
                     VersionModel mVersion = MinVersionJsonParser.parseMinVersion(responseString);
-                    // mVersion.setMin_version("2");
+                    // mVersion.setMin_version("3");
                     //mVersion.setMin_version_url("http://s3-us-west-1.amazonaws.com/bentonow-assets/android_driver_app/AndroidDrive.html");
-                    if (mVersion.getMin_version() != null && !mVersion.getMin_version().isEmpty() && !mVersion.getMin_version().equals("null") && !mVersion.getMin_version().equals(String.valueOf(AndroidUtil.getCodeName(SplashActivity.this)))) {
+                    if (!BentoDriveUtil.bISValidVersion(mVersion.getMin_version())) {
                         forceDownloadLink(mVersion.getMin_version_url());
                     } else {
                         BentoDriveUtil.openLogInActivity(SplashActivity.this);

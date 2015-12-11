@@ -58,7 +58,7 @@ public class GoogleLocationUtil {
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, getLocationRequest(), new LocationListener() {
                 @Override
                 public void onLocationChanged(Location mCurrentLocation) {
-                    if (mListener != null)
+                    if (mListener != null && mCurrentLocation != null)
                         mListener.onLocationUpdated(mCurrentLocation);
 
                 }

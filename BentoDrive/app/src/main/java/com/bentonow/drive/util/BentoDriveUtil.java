@@ -97,4 +97,24 @@ public class BentoDriveUtil {
         }
         return sFormat;
     }
+
+    public static boolean bISValidVersion(String sMInVersion) {
+        boolean bIsValid = true;
+        int iMinVersion;
+
+        try {
+            if (sMInVersion != null && !sMInVersion.isEmpty() && !sMInVersion.equals("null")) {
+                iMinVersion = Integer.parseInt(sMInVersion);
+                if (iMinVersion > AndroidUtil.getCodeName(Application.getInstance()))
+                    bIsValid = false;
+            } else {
+                bIsValid = false;
+            }
+        } catch (Exception ex) {
+            DebugUtils.logError("bISValidVersion", ex);
+            bIsValid = false;
+        }
+
+        return bIsValid;
+    }
 }

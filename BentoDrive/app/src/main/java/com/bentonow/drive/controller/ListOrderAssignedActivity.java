@@ -79,7 +79,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
         getListOrder().setAdapter(getListAdapter());
 
-        showLoader("Downloading...");
+        showLoader("Downloading...", true);
 
         mIsFirstTime = true;
 
@@ -108,11 +108,12 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     }
 
-    private void showLoader(final String sMessage) {
+    private void showLoader(final String sMessage, final boolean bCancelable) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 mLoaderDialog = new ProgressDialog(ListOrderAssignedActivity.this, sMessage);
+                mLoaderDialog.setCancelable(bCancelable);
                 mLoaderDialog.show();
             }
         });
@@ -207,7 +208,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     public void onConnectionLost(boolean bPurpose) {
         if (!bPurpose && !mReconnecting) {
             mReconnecting = true;
-            showLoader("Connecting...");
+            showLoader("Connecting...", false);
         }
     }
 
