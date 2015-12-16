@@ -143,7 +143,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     private void acceptOrder() {
 
-        showLoader("Progressing....");
+        showLoader("Progressing....", true);
 
         BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ACCEPT, webSocketService.getListTask().get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
@@ -205,7 +205,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     private void rejectOrder() {
 
-        showLoader("Progressing....");
+        showLoader("Progressing....", true);
 
         BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.REJECT, webSocketService.getListTask().get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
@@ -267,7 +267,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     private void arrivedOrder() {
 
-        showLoader("Progressing....");
+        showLoader("Progressing....", true);
 
         BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ARRIVED, webSocketService.getListTask().get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
@@ -324,7 +324,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     private void completeOrder() {
 
-        showLoader("Progressing....");
+        showLoader("Progressing....", true);
 
         BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.COMPLETE, webSocketService.getListTask().get(0), new TextHttpResponseHandler() {
             @SuppressWarnings("deprecation")
@@ -393,11 +393,12 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         DebugUtils.logDebug(TAG, "Total Orders: " + webSocketService.getListTask().size());
     }
 
-    private void showLoader(final String sMessage) {
+    private void showLoader(final String sMessage, final boolean bCancelable) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 mLoaderDialog = new ProgressDialog(OrderAssignedActivity.this, sMessage);
+                mLoaderDialog.setCancelable(bCancelable);
                 mLoaderDialog.show();
             }
         });
@@ -472,16 +473,17 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
             case R.id.container_map:
                 if (webSocketService.getListTask().get(0) != null) {
                     DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_address), BentoDriveUtil.getFormatAddress(webSocketService.getListTask().get(0).getAddress()));
-                    mAcceptDialog.addCancelButton("Show options", new View.OnClickListener() {
+                    mAcceptDialog.addCancelButton("Show Options", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             SocialNetworksUtil.openLocation(OrderAssignedActivity.this, webSocketService.getListTask().get(0).getAddress().getLat(), webSocketService.getListTask().get(0).getAddress().getLng());
                         }
                     });
-                    mAcceptDialog.addAcceptButton("Open waze", new View.OnClickListener() {
+                    mAcceptDialog.addAcceptButton("Open Waze", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            SocialNetworksUtil.openWazeLocation(OrderAssignedActivity.this, webSocketService.getListTask().get(0).getAddress().getLat(), webSocketService.getListTask().get(0).getAddress().getLng());
+                            // SocialNetworksUtil.openWazeAddress(OrderAssignedActivity.this, webSocketService.getListTask().get(0).getAddress().get, webSocketService.getListTask().get(0).getAddress().getLng());
+                            SocialNetworksUtil.openWazeAddress(OrderAssignedActivity.this, BentoDriveUtil.getFormatAddress(webSocketService.getListTask().get(0).getAddress()));
                         }
                     });
                     mAcceptDialog.show();
@@ -539,7 +541,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     public void onConnectionLost(boolean bPurpose) {
         if (!bPurpose && !mReconnecting) {
             mReconnecting = true;
-            showLoader("Connecting...");
+            showLoader("Connecting...", false);
         }
     }
 
@@ -595,16 +597,11 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     protected void onResume() {
         super.onResume();
 
-        if (!BentoDriveUtil.isUserConnected(OrderAssignedActivity.this)) {
-            BentoDriveUtil.disconnectUser(OrderAssignedActivity.this, true);
-            finish();
-        } else {
-            if (webSocketService != null && !sOrderId.equals("")) {
-                webSocketService.setWebSocketLister(OrderAssignedActivity.this);
-                webSocketService.onNodeEventListener();
-                if (!webSocketService.getListTask().get(0).getOrderId().equals(sOrderId)) {
-                    finish();
-                }
+        if (webSocketService != null && !sOrderId.equals("")) {
+            webSocketService.setWebSocketLister(OrderAssignedActivity.this);
+            webSocketService.onNodeEventListener();
+            if (!webSocketService.getListTask().get(0).getOrderId().equals(sOrderId)) {
+                finish();
             }
         }
 

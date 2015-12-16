@@ -25,7 +25,6 @@ import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.NotificationUtil;
-import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.DialogMaterial;
@@ -313,20 +312,15 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     protected void onResume() {
         super.onResume();
 
-        if (!BentoDriveUtil.isUserConnected(ListOrderAssignedActivity.this)) {
-            BentoDriveUtil.disconnectUser(ListOrderAssignedActivity.this, SharedPreferencesUtil.getBooleanPreference((ListOrderAssignedActivity.this), SharedPreferencesUtil.USE_SAVED_SETTINGS));
-            finish();
-        } else {
-            if (webSocketService != null) {
-                aListOder = webSocketService.getListTask();
-                webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
-                webSocketService.onNodeEventListener();
-            }
-
-            NotificationUtil.cancelAllNotification(ListOrderAssignedActivity.this);
-
-            refreshAssignedList(true);
+        if (webSocketService != null) {
+            aListOder = webSocketService.getListTask();
+            webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
+            webSocketService.onNodeEventListener();
         }
+
+        NotificationUtil.cancelAllNotification(ListOrderAssignedActivity.this);
+
+        refreshAssignedList(true);
 
     }
 

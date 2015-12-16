@@ -140,7 +140,6 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
             bAlreadyOpen = true;
             SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
             SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
-            SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, true);
             SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.USE_SAVED_SETTINGS, true);
 
             DebugUtils.logDebug(TAG, "Token: " + sToken);
