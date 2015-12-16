@@ -138,10 +138,18 @@ public class SocialNetworksUtil {
     }
 
     public static void openWazeAddress(Activity act, String sAddress) {
-        final String urlWaze = "waze://?q=" + sAddress + "&navigate=yes";
+        String urlWaze = "waze://?q=" + sAddress + "&navigate=yes";
+//        try {
+//            urlWaze = "waze://?q=" + URLEncoder.encode(sAddress, "UTF-8") + "&navigate=yes";
+//            urlWaze = urlWaze.replace("+", "%20");
+//        } catch (Exception ex) {
+//            urlWaze = "waze://?q=" + sAddress + "&navigate=yes";
+//            DebugUtils.logError("openWazeAddress:", ex);
+//        }
 
         Intent pageIntent = new Intent(Intent.ACTION_VIEW);
         pageIntent.setData(Uri.parse(urlWaze));
+        DebugUtils.logDebug("openWazeAddress:", pageIntent.getData().toString());
 
         final PackageManager packageManager = act.getPackageManager();
         List<ResolveInfo> list = packageManager.queryIntentActivities(pageIntent, PackageManager.MATCH_DEFAULT_ONLY);
