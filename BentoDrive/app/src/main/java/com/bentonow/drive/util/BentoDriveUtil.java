@@ -103,13 +103,9 @@ public class BentoDriveUtil {
         int iMinVersion;
 
         try {
-            if (sMInVersion != null && !sMInVersion.isEmpty() && !sMInVersion.equals("null")) {
-                iMinVersion = Integer.parseInt(sMInVersion);
-                if (iMinVersion > AndroidUtil.getCodeName(Application.getInstance()))
-                    bIsValid = false;
-            } else {
+            iMinVersion = Integer.parseInt(sMInVersion);
+            if (iMinVersion > AndroidUtil.getCodeName(Application.getInstance()))
                 bIsValid = false;
-            }
         } catch (Exception ex) {
             DebugUtils.logError("bISValidVersion", ex);
             bIsValid = false;

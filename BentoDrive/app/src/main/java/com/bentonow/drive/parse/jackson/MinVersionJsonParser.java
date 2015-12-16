@@ -23,7 +23,11 @@ public class MinVersionJsonParser extends MainParser {
         while (jp.nextToken() != JsonToken.END_OBJECT) {
             nameField = jp.getCurrentName();
             jp.nextToken();
-            if ("ret".equals(nameField)) {
+            if ("code".equals(nameField)) {
+                mVersion.setiCode(jp.getIntValue());
+            } else if ("msg".equals(nameField)) {
+                mVersion.setsMessage(jp.getText());
+            } else if ("ret".equals(nameField)) {
                 while (jp.nextToken() != JsonToken.END_OBJECT) {
                     nameField = jp.getCurrentName();
                     jp.nextToken();

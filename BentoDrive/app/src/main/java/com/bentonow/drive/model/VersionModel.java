@@ -6,6 +6,8 @@ package com.bentonow.drive.model;
 public class VersionModel {
     private String min_version = "";
     private String min_version_url = "";
+    private int iCode = 0;
+    private String sMessage = "";
 
     public String getMin_version() {
         return min_version;
@@ -21,5 +23,21 @@ public class VersionModel {
 
     public void setMin_version_url(String min_version_url) {
         this.min_version_url = min_version_url;
+    }
+
+    public int getiCode() {
+        return iCode;
+    }
+
+    public void setiCode(int iCode) {
+        this.iCode = iCode;
+    }
+
+    public String getsMessage() {
+        return sMessage;
+    }
+
+    public void setsMessage(String sMessage) {
+        this.sMessage = sMessage;
     }
 }

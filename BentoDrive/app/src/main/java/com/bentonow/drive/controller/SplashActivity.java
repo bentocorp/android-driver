@@ -68,10 +68,14 @@ public class SplashActivity extends MainActivity {
                 DebugUtils.logError(TAG, "Code: " + statusCode);
                 DebugUtils.logError(TAG, "Response: " + responseString);
 
-                if (responseString == null || responseString.equals("null"))
-                    WidgetsUtils.createShortToast(R.string.error_failed_no_internet);
-                else
-                    WidgetsUtils.createShortToast(responseString);
+                switch (statusCode) {
+                    case 0:
+                        WidgetsUtils.createShortToast(R.string.error_failed_no_internet);
+                        break;
+                    default:
+                        WidgetsUtils.createShortToast(responseString);
+                        break;
+                }
 
                 runOnUiThread(new Runnable() {
                     @Override
@@ -88,13 +92,41 @@ public class SplashActivity extends MainActivity {
                 try {
                     DebugUtils.logDebug(TAG, responseString);
                     VersionModel mVersion = MinVersionJsonParser.parseMinVersion(responseString);
-                    // mVersion.setMin_version("3");
+                    //mVersion.setMin_version("3");
                     //mVersion.setMin_version_url("http://s3-us-west-1.amazonaws.com/bentonow-assets/android_driver_app/AndroidDrive.html");
-                    if (!BentoDriveUtil.bISValidVersion(mVersion.getMin_version())) {
-                        forceDownloadLink(mVersion.getMin_version_url());
-                    } else {
-                        BentoDriveUtil.openLogInActivity(SplashActivity.this);
+
+                    switch (mVersion.getiCode()) {
+                        case 0:
+                            boolean bErrorMin = false;
+                            if (mVersion.getMin_version() == null || mVersion.getMin_version().isEmpty() || mVersion.getMin_version().equals("null")) {
+                                mVersion.setMin_version("NULL");
+                                bErrorMin = true;
+                            } else if (mVersion.getMin_version_url() == null || mVersion.getMin_version_url().isEmpty() || mVersion.getMin_version_url().equals("null")) {
+                                mVersion.setMin_version_url("NULL");
+                                bErrorMin = true;
+                            }
+
+                            if (bErrorMin) {
+                                DialogMaterial mDialog = new DialogMaterial(SplashActivity.this, "Error", "There seems to be a problem. Please inform dispatcher. +" +
+                                        "\nAndroid Min: " + mVersion.getMin_version() + " \nAndroid Min URL: " + mVersion.getMin_version_url());
+                                mDialog.addAcceptButton("Accept");
+                                mDialog.show();
+                            } else {
+                                if (!BentoDriveUtil.bISValidVersion(mVersion.getMin_version())) {
+                                    forceDownloadLink(mVersion.getMin_version_url(), mVersion.getMin_version());
+                                } else {
+                                    BentoDriveUtil.openLogInActivity(SplashActivity.this);
+                                }
+                            }
+
+                            break;
+                        case 1:
+                            DialogMaterial mDialog = new DialogMaterial(SplashActivity.this, "Error", mVersion.getsMessage());
+                            mDialog.addAcceptButton("Accept");
+                            mDialog.show();
+                            break;
                     }
+
 
                 } catch (Exception ex) {
                     DebugUtils.logError(TAG, ex);
@@ -104,11 +136,12 @@ public class SplashActivity extends MainActivity {
         });
     }
 
-    private void forceDownloadLink(final String sUrl) {
+    private void forceDownloadLink(final String sUrl, final String sVersionCode) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                DialogMaterial mDialog = new DialogMaterial(SplashActivity.this, "New Version", "There is a new version available");
+                DialogMaterial mDialog = new DialogMaterial(SplashActivity.this, "Update Available", "Please update to the new version now. " +
+                        "\nCurrent: " + AndroidUtil.getCodeName(SplashActivity.this) + " \nNew: " + sVersionCode);
                 mDialog.addAcceptButton("Download", new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
