@@ -137,6 +137,21 @@ public class SocialNetworksUtil {
             openAndoridApp(act, "com.waze");
     }
 
+    public static void openWazeAddress(Activity act, String sAddress) {
+        final String urlWaze = "waze://?q=" + sAddress + "&navigate=yes";
+
+        Intent pageIntent = new Intent(Intent.ACTION_VIEW);
+        pageIntent.setData(Uri.parse(urlWaze));
+
+        final PackageManager packageManager = act.getPackageManager();
+        List<ResolveInfo> list = packageManager.queryIntentActivities(pageIntent, PackageManager.MATCH_DEFAULT_ONLY);
+
+        if (!list.isEmpty())
+            act.startActivity(pageIntent);
+        else
+            openAndoridApp(act, "com.waze");
+    }
+
 
     public static void openLocation(Activity act, double latitude, double longitude) {
         final String urlLocation = String.format(Locale.ENGLISH, "geo:%f,%f?q=%f,%f", latitude, longitude, latitude, longitude);
