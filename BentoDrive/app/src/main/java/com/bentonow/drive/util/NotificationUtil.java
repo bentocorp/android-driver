@@ -30,7 +30,7 @@ public class NotificationUtil {
         NotificationCompat.Builder mNotifyBuilder = new NotificationCompat.Builder(mContext);
 
         mNotifyBuilder.setSmallIcon(R.mipmap.bento_launch);
-        mNotifyBuilder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
+        mNotifyBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotifyBuilder.setContentTitle("Bento Drive");
         mNotifyBuilder.setContentText(mContext.getString(idNotificationBody));
         mNotifyBuilder.setSound(uriLocation);
