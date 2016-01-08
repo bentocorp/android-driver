@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bentonow.drive.BuildConfig;
 import com.bentonow.drive.R;
 import com.bentonow.drive.listener.DialogSelectListener;
 import com.bentonow.drive.model.VersionModel;
@@ -41,6 +42,7 @@ public class SplashActivity extends MainActivity {
         setContentView(R.layout.activity_splash);
 
         getTxtAppVersion().setText(AndroidUtil.getVersionName());
+        getTxtAppVersion().setVisibility(BuildConfig.DEBUG ? View.VISIBLE : View.INVISIBLE);
 
         OrderItemDAO.deleteAll();
         SharedPreferencesUtil.setAppPreference(SplashActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
@@ -92,7 +94,7 @@ public class SplashActivity extends MainActivity {
                 try {
                     DebugUtils.logDebug(TAG, responseString);
                     VersionModel mVersion = MinVersionJsonParser.parseMinVersion(responseString);
-                    //mVersion.setMin_version("3");
+                    //mVersion.setMin_version("4");
                     //mVersion.setMin_version_url("http://s3-us-west-1.amazonaws.com/bentonow-assets/android_driver_app/AndroidDrive.html");
 
                     switch (mVersion.getiCode()) {
@@ -120,7 +122,7 @@ public class SplashActivity extends MainActivity {
                             }
 
                             break;
-                        case 1:
+                        default:
                             DialogMaterial mDialog = new DialogMaterial(SplashActivity.this, "Error", mVersion.getsMessage());
                             mDialog.addAcceptButton("Accept");
                             mDialog.show();
