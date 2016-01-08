@@ -32,8 +32,8 @@ android {
         applicationId "com.bentonow.drive"
         minSdkVersion 14
         targetSdkVersion 22
-        versionCode 1
-        versionName "1.0"
+        versionCode 3
+        versionName "3.0"
     }
     buildTypes {
         release {
@@ -47,11 +47,11 @@ android {
     productFlavors {
         production {
             applicationId "com.bentonow.drive"
-            versionName '1.1'
+            versionName '1.2'
         }
         stage {
             applicationId "com.bentonow.drive.stage"
-            versionName '1.1-dev'
+            versionName '1.2-dev'
         }
     }
 

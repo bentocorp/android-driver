@@ -161,6 +161,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 try {
                     ResponseModel mResponse = MainParser.getObjectMapper().readValue(responseString, ResponseModel.class);
 
+                    DebugUtils.logDebug(TAG, "Response Code: " + mResponse.getCode() + "Message: " + mResponse.getMsg());
+
                     switch (mResponse.getCode()) {
                         case 0:
                             if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty())
@@ -175,7 +177,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                 }
                             });
                             break;
-                        case 1:
+                        default:
                             if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
                                 if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
                                     runOnUiThread(new Runnable() {
@@ -223,6 +225,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 try {
                     ResponseModel mResponse = MainParser.getObjectMapper().readValue(responseString, ResponseModel.class);
 
+                    DebugUtils.logDebug(TAG, "Response Code: " + mResponse.getCode() + "Message: " + mResponse.getMsg());
+
                     switch (mResponse.getCode()) {
                         case 0:
                             if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty())
@@ -236,7 +240,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                 }
                             });
                             break;
-                        case 1:
+                        default:
                             if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
                                 if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
                                     runOnUiThread(new Runnable() {
@@ -295,7 +299,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                 }
                             });
                             break;
-                        case 1:
+                        default:
                             if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
                                 if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
                                     runOnUiThread(new Runnable() {
@@ -350,7 +354,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                                 }
                             });
                             break;
-                        case 1:
+                        default:
                             if (mResponse.getMsg() != null && !mResponse.getMsg().isEmpty()) {
                                 if (BentoDriveUtil.isInvalidPhoneNumber(mResponse.getMsg())) {
                                     runOnUiThread(new Runnable() {

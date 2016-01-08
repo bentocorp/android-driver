@@ -20,8 +20,6 @@ public class TelephonyUtils {
 	static NetworkInfo network;
 	static Calendar c = Calendar.getInstance();
 	static LocationManager locationManager;
-	protected LongProcess process = null;
-	protected ReportCallWebService getCallWs = null;
 	String Imei;
 	static int strenght = 0;
 
@@ -42,7 +40,7 @@ public class TelephonyUtils {
 
 		pojo.setImei(getImei(context));
 
-		HomeActivity.Imei = pojo.getImei();
+		//HomeActivity.Imei = pojo.getImei();
 
 		TelephonyManager telephonyManager = (TelephonyManager) context
 				.getSystemService(Context.TELEPHONY_SERVICE);
@@ -137,7 +135,6 @@ public class TelephonyUtils {
 	 * Check if there is any connectivity to a Wifi network
 	 * 
 	 * @param context
-	 * @param type
 	 * @return
 	 */
 	public static boolean isConnectedWifi(Context context) {
@@ -149,7 +146,6 @@ public class TelephonyUtils {
 	 * Check if there is any connectivity to a mobile network
 	 * 
 	 * @param context
-	 * @param type
 	 * @return
 	 */
 	public static boolean isConnectedMobile(Context context) {
@@ -281,7 +277,7 @@ public class TelephonyUtils {
 
 	}
 
-	public CallStatusPojo getInformationNull(Context context) {
+	/*public CallStatusPojo getInformationNull(Context context) {
 		CallStatusPojo pojo = new CallStatusPojo();
 		network = getNetworkInfo(context);
 
@@ -369,7 +365,7 @@ public class TelephonyUtils {
 		telephony.listen(phoneListener,
 				PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
 		telephony.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE);
-	}
+	}*/
 	
 	public static String getPhoneNumber(Context context){
 		TelephonyManager tMgr =(TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
