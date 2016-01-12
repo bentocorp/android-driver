@@ -19,6 +19,7 @@ import com.bentonow.drive.listener.WebSocketEventListener;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.model.ResponseModel;
 import com.bentonow.drive.model.sugar.OrderItemDAO;
+import com.bentonow.drive.parse.jackson.BentoOrderJsonParser;
 import com.bentonow.drive.parse.jackson.MainParser;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
@@ -66,7 +67,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
 
-    ArrayList<OrderItemModel> aTempListOder = new ArrayList<>();
+    private List<OrderItemModel> aTempListOder = new ArrayList<>();
 
     private boolean mBound = false;
     private boolean mReconnecting = false;
@@ -419,6 +420,58 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     }
 
 
+    private void getAssignedOrders() {
+        BentoRestClient.getAssignedOrders(null, new TextHttpResponseHandler() {
+            @SuppressWarnings("deprecation")
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                DebugUtils.logError(TAG, "Code: " + statusCode);
+                DebugUtils.logError(TAG, "Response: " + responseString);
+
+                if (responseString == null || responseString.equals("null"))
+                    WidgetsUtils.createShortToast("There was a problem pull to refresh");
+                else
+                    WidgetsUtils.createShortToast("There was a problem pull to refresh");
+
+                dismissDialog();
+
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                DebugUtils.logDebug(TAG, "Order: " + responseString);
+
+                dismissDialog();
+
+                boolean bSameBento;
+
+                aTempListOder = BentoOrderJsonParser.parseBentoListOrder(responseString);
+
+                if (aTempListOder.isEmpty()) {
+                    bSameBento = false;
+                } else {
+                    bSameBento = sOrderId.equals(aTempListOder.get(0).getOrderId());
+                }
+
+                webSocketService.saveListTask(aTempListOder);
+
+                if (!bSameBento) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            onBackPressed();
+                        }
+                    });
+                }
+
+            }
+
+        });
+
+    }
+
+
     private class WebSocketServiceConnection implements ServiceConnection {
         @Override
         public void onServiceConnected(ComponentName name, IBinder binder) {
@@ -532,29 +585,22 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     }
 
     @Override
-    public void onSuccessfulConnection() {
-
+    public void onReconnecting() {
     }
 
     @Override
     public void onConnectionError(String sReason) {
-
-    }
-
-    @Override
-    public void onConnectionLost(boolean bPurpose) {
-        if (!bPurpose && !mReconnecting) {
-            mReconnecting = true;
-            showLoader("Connecting...", false);
-        }
+        DebugUtils.logError(TAG, sReason);
     }
 
     @Override
     public void onAuthenticationSuccess(String token) {
-        if (mReconnecting)
+        if (mReconnecting) {
+            dismissDialog();
             WidgetsUtils.createShortToast("Connection Restored");
-
-        dismissDialog();
+            showLoader("Downloading...", true);
+            getAssignedOrders();
+        }
 
         mReconnecting = false;
     }
@@ -566,7 +612,10 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     @Override
     public void onDisconnect(boolean disconnectingPurposefully) {
-
+        if (!disconnectingPurposefully && !mReconnecting) {
+            mReconnecting = true;
+            showLoader("Connecting...", false);
+        }
     }
 
     @Override

@@ -120,17 +120,12 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
     }
 
     @Override
-    public void onSuccessfulConnection() {
+    public void onReconnecting() {
 
     }
 
     @Override
     public void onConnectionError(String sReason) {
-
-    }
-
-    @Override
-    public void onConnectionLost(boolean bPurpose) {
 
     }
 
@@ -165,8 +160,8 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
     public void onDisconnect(boolean disconnectingPurposefully) {
         hideDialogs();
 
-        if (!disconnectingPurposefully)
-            WidgetsUtils.createShortToast(R.string.error_node_connection);
+       /* if (!disconnectingPurposefully)
+            WidgetsUtils.createShortToast(R.string.error_node_connection);*/
     }
 
     @Override

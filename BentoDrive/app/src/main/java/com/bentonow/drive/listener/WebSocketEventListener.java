@@ -9,11 +9,9 @@ import java.util.List;
  */
 public interface WebSocketEventListener {
 
-    void onSuccessfulConnection();
+    void onReconnecting();
 
     void onConnectionError(String sReason);
-
-    void onConnectionLost(boolean bPurpose);
 
     void onAuthenticationSuccess(String token);
 

@@ -59,7 +59,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     private boolean mBound = false;
     private boolean mReconnecting = false;
-
     private boolean mIsFirstTime;
 
     @Override
@@ -169,6 +168,11 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     }
 
+    private void bindService() {
+        Intent intent = new Intent(this, WebSocketService.class);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
     private class WebSocketServiceConnection implements ServiceConnection {
         @Override
         public void onServiceConnected(ComponentName name, IBinder binder) {
@@ -196,19 +200,12 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
 
     @Override
-    public void onSuccessfulConnection() {
+    public void onReconnecting() {
     }
 
     @Override
     public void onConnectionError(String sReason) {
-    }
-
-    @Override
-    public void onConnectionLost(boolean bPurpose) {
-        if (!bPurpose && !mReconnecting) {
-            mReconnecting = true;
-            showLoader("Connecting...", false);
-        }
+        DebugUtils.logError(TAG, sReason);
     }
 
     @Override
@@ -216,6 +213,8 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         if (mReconnecting) {
             hideLoader();
             WidgetsUtils.createShortToast("Connection Restored");
+            showLoader("Downloading...", true);
+            getAssignedOrders();
         }
 
         mReconnecting = false;
@@ -228,6 +227,10 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     @Override
     public void onDisconnect(boolean disconnectingPurposefully) {
+        if (!disconnectingPurposefully && !mReconnecting) {
+            mReconnecting = true;
+            showLoader("Connecting...", false);
+        }
     }
 
     @Override
@@ -293,8 +296,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     @Override
     protected void onStart() {
         super.onStart();
-        Intent intent = new Intent(this, WebSocketService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        bindService();
     }
 
     @Override

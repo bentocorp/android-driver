@@ -4,6 +4,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Binder;
+import android.os.CountDownTimer;
+import android.os.Handler;
 import android.os.IBinder;
 
 import com.bentonow.drive.Application;
@@ -60,6 +62,17 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
     private WebSocketEventListener mSocketListener;
 
+    private CountDownTimer mCountDown;
+
+    private Handler mHandler = new Handler();
+
+    private Runnable connectAgain = new Runnable() {
+        public void run() {
+            // connecting = false;
+            connectAgain();
+        }
+    };
+
     @Override
     public void onCreate() {
         DebugUtils.logDebug(TAG, "creating new WebSocketService");
@@ -89,12 +102,12 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 IO.Options opts = new IO.Options();
 
                 opts.port = 8443;
-                opts.forceNew = true;
+                opts.forceNew = false;
+                opts.reconnection = true;
                 opts.secure = true;
                 opts.sslContext = sc;
                 opts.hostnameVerifier = new RelaxedHostNameVerifier();
-                opts.reconnectionDelay = 500;
-                opts.timeout = 5000;
+                opts.reconnectionDelay = 1000;
 
                 //opts.timeout = 5000;
                 mSocket = IO.socket(BentoDriveAPI.getNodeUrl(WebSocketService.this), opts);
@@ -102,8 +115,9 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 mSocket.connect();
             } catch (Exception e) {
                 DebugUtils.logError(TAG, "connectWebSocket: " + e.toString());
+                connecting = false;
                 if (mSocketListener != null)
-                    mSocketListener.onConnectionError(e.getMessage());
+                    mSocketListener.onConnectionError("connectWebSocket: " + e.getMessage());
             }
         }
     }
@@ -113,9 +127,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
             @Override
             public void call(Object[] args) {
-                if (mSocketListener != null)
-                    mSocketListener.onSuccessfulConnection();
                 try {
+                    // stopCountDownRestart();
                     String sPath = BentoDriveAPI.getAuthenticationUrl(sUser, sPass);
                     DebugUtils.logDebug(TAG, "Connecting: " + sPath);
                     mSocket.emit("get", sPath, new Ack() {
@@ -144,6 +157,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                     Application.getInstance().handlerPost(new Runnable() {
                                         @Override
                                         public void run() {
+                                            GoogleLocationUtil.stopLocationUpdates();
                                             GoogleLocationUtil.startLocationUpdates(WebSocketService.this, WebSocketService.this);
                                         }
                                     });
@@ -151,51 +165,59 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                             } catch (Exception e) {
                                 if (mSocketListener != null)
                                     mSocketListener.onAuthenticationFailure(e.getMessage());
-                                DebugUtils.logError(TAG, "socketAuthenticate: " + e.toString());
+                                DebugUtils.logError(TAG, "SocketAuthenticate: " + e.toString());
                                 mSocket.disconnect();
                             }
                         }
                     });
                 } catch (Exception e) {
                     if (mSocketListener != null)
-                        mSocketListener.onConnectionError(e.getMessage());
-                    DebugUtils.logError(TAG, "disconnecting-onemittig");
+                        mSocketListener.onConnectionError("Connection Error: " + e.getMessage());
                     mSocket.disconnect();
                 }
-            }
-        });
-        mSocket.on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener() {
-            @Override
-            public void call(Object[] args) {
-                DebugUtils.logError(TAG, "connection-error: " + args[0].toString());
-                if (mSocketListener != null)
-                    mSocketListener.onConnectionLost(disconnectingPurposefully);
-
-                if (disconnectingPurposefully)
-                    mSocket.disconnect();
-                else
-                    mSocketListener.onConnectionLost(false);
-            }
-        });
-        mSocket.on(Socket.EVENT_CONNECT_TIMEOUT, new Emitter.Listener() {
-            @Override
-            public void call(Object[] args) {
-                if (mSocketListener != null)
-                    mSocketListener.onConnectionError("Error - WebSocket connection timeout");
-
-                mSocket.disconnect();
-
-                DebugUtils.logError(TAG, "disconnecting-connect-timeout");
             }
         });
         mSocket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
             @Override
             public void call(Object[] args) {
-                connecting = false;
+                for (Object mObject : args)
+                    DebugUtils.logDebug(TAG, "EVENT_DISCONNECT: " + mObject.toString());
+
                 if (mSocketListener != null)
                     mSocketListener.onDisconnect(disconnectingPurposefully);
 
                 disconnectingPurposefully = false;
+
+                //  startCountDownRestart();
+            }
+        });
+        mSocket.on(Socket.EVENT_ERROR, new Emitter.Listener() {
+            @Override
+            public void call(Object[] args) {
+                for (Object mObject : args)
+                    DebugUtils.logDebug(TAG, "EVENT_ERROR: " + mObject.toString());
+
+
+            }
+        });
+        mSocket.on(Socket.EVENT_RECONNECT_ERROR, new Emitter.Listener() {
+            @Override
+            public void call(Object[] args) {
+                for (Object mObject : args)
+                    DebugUtils.logDebug(TAG, "EVENT_RECONNECT_ERROR: " + mObject.toString());
+
+            }
+        });
+        mSocket.on(Socket.EVENT_RECONNECTING, new Emitter.Listener() {
+            @Override
+            public void call(Object[] args) {
+                for (Object mObject : args)
+                    DebugUtils.logDebug(TAG, "EVENT_RECONNECTING: " + mObject.toString());
+
+                if (mSocketListener != null)
+                    mSocketListener.onReconnecting();
+
+                //  startCountDownRestart();
             }
         });
     }
@@ -355,6 +377,10 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         GoogleLocationUtil.stopLocationUpdates();
     }
 
+    public void connectAgain() {
+        connectWebSocket(sUsername, sPassword);
+    }
+
     public boolean isConnectedUser() {
         if (mSocket != null && mSocket.connected() && SharedPreferencesUtil.getBooleanPreference(WebSocketService.this, SharedPreferencesUtil.IS_USER_LOG_IN)) {
             return true;
@@ -379,9 +405,19 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         mSocketListener = mListener;
     }
 
+    private void startCountDownRestart() {
+        stopCountDownRestart();
+        mHandler.post(connectAgain);
+    }
+
+    private void stopCountDownRestart() {
+        mHandler.removeCallbacks(connectAgain);
+        //   54885700 ext 80447  5554036636  alejrandro ortiz martinez ale_ortizseguros@yahoo.com.mx
+    }
+
     @Override
     public void onLocationUpdated(Location mLocation) {
-        if (isConnectedUser()) {
+        if (isConnectedUser() && mLocation != null) {
             mSocket.emit("get", BentoDriveAPI.getSendLocationUrl(mLocation.getLatitude(), mLocation.getLongitude()), new Ack() {
                 @Override
                 public void call(Object[] args) {
