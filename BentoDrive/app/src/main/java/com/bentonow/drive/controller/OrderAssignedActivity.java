@@ -32,6 +32,7 @@ import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.ButtonFlat;
 import com.bentonow.drive.widget.material.DialogMaterial;
+import com.crashlytics.android.Crashlytics;
 import com.loopj.android.http.TextHttpResponseHandler;
 
 import org.apache.http.Header;
@@ -496,6 +497,10 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         public void onServiceDisconnected(ComponentName name) {
             DebugUtils.logDebug(TAG, "Disconnected from service " + name);
             mBound = true;
+
+            Crashlytics.log(TAG + " Disconnected from service " + name.toString());
+
+            onBackPressed();
         }
     }
 

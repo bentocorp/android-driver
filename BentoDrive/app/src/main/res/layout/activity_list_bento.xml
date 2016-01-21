@@ -40,6 +40,15 @@
                     android:layout_height="?attr/actionBarSize"
                     android:layout_alignParentRight="true"
                     android:src="@drawable/ic_action_action_exit_to_app" />
+
+                <ImageView
+                    android:id="@+id/img_menu_item_rebound"
+                    android:layout_width="?attr/actionBarSize"
+                    android:layout_height="?attr/actionBarSize"
+                    android:src="@drawable/ic_action_action_cached"
+                    android:layout_alignParentTop="true"
+                    android:layout_toLeftOf="@+id/img_menu_item_log_out"
+                    android:layout_toStartOf="@+id/img_menu_item_log_out" />
             </RelativeLayout>
 
         </android.support.v7.widget.Toolbar>

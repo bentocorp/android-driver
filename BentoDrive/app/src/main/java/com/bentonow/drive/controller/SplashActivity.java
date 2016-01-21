@@ -16,7 +16,6 @@ import com.bentonow.drive.parse.jackson.MinVersionJsonParser;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
-import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.SocialNetworksUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoRestClient;
@@ -45,7 +44,6 @@ public class SplashActivity extends MainActivity {
         getTxtAppVersion().setVisibility(BuildConfig.DEBUG ? View.VISIBLE : View.INVISIBLE);
 
         OrderItemDAO.deleteAll();
-        SharedPreferencesUtil.setAppPreference(SplashActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
 
         getBtnRetry().setOnClickListener(new View.OnClickListener() {
             @Override

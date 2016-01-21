@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
@@ -25,15 +26,19 @@ import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.NotificationUtil;
+import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.DialogMaterial;
+import com.crashlytics.android.Crashlytics;
 import com.loopj.android.http.TextHttpResponseHandler;
 
 import org.apache.http.Header;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -44,6 +49,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     //public static final int TAG_ID = 2;
 
     private ImageView imgMenuItemLogOut;
+    private ImageView imgMenuItemRebound;
     private TextView txtEmptyView;
     private SwipeRefreshLayout swipeRefreshLayout;
 
@@ -57,9 +63,13 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     private List<OrderItemModel> aListOder = new ArrayList<>();
 
+    private Handler mHandler = new Handler();
+    private Timer mTimer = new Timer();
+
     private boolean mBound = false;
     private boolean mReconnecting = false;
     private boolean mIsFirstTime;
+    private boolean bIsRetrying = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +77,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         setContentView(R.layout.activity_list_bento);
 
         getMenuItemLogOut().setOnClickListener(this);
+        getImgMenuItemRebound().setOnClickListener(this);
 
         getSwipeRefreshLayout().setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -110,9 +121,11 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mLoaderDialog = new ProgressDialog(ListOrderAssignedActivity.this, sMessage);
-                mLoaderDialog.setCancelable(bCancelable);
-                mLoaderDialog.show();
+                if (mLoaderDialog == null || !mLoaderDialog.isShowing()) {
+                    mLoaderDialog = new ProgressDialog(ListOrderAssignedActivity.this, sMessage);
+                    mLoaderDialog.setCancelable(bCancelable);
+                    mLoaderDialog.show();
+                }
             }
         });
     }
@@ -173,6 +186,41 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
+    private void startServiceTimer() {
+        mTimer = new Timer();
+        TimerTask doAsynchronousTask = new TimerTask() {
+            @Override
+            public void run() {
+                mHandler.post(new Runnable() {
+                    @SuppressWarnings("unchecked")
+                    public void run() {
+                        try {
+                            if (webSocketService != null) {
+                                if (!webSocketService.isConnectedUser()) {
+                                    if (!bIsRetrying && !mReconnecting) {
+                                        bIsRetrying = true;
+                                        Crashlytics.log("Disconnected from service and didn't pass through Disconnect method");
+                                        showLoader("Connecting...", false);
+                                        bindService();
+                                    }
+                                } else if (!webSocketService.isSocketListener()) {
+                                    Crashlytics.log("Listener lost reference after restart: " + SharedPreferencesUtil.getBooleanPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.IS_SERVICE_RESTART));
+                                    webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
+                                }
+                            }
+                            DebugUtils.logDebug("Is Service Connected: " + SharedPreferencesUtil.getBooleanPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN));
+
+
+                        } catch (Exception e) {
+                            DebugUtils.logError(TAG, e);
+                        }
+                    }
+                });
+            }
+        };
+        mTimer.schedule(doAsynchronousTask, 1000, 3000);
+    }
+
     private class WebSocketServiceConnection implements ServiceConnection {
         @Override
         public void onServiceConnected(ComponentName name, IBinder binder) {
@@ -182,18 +230,33 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
             webSocketService.onNodeEventListener();
             aListOder = webSocketService.getListTask();
-            mBound = true;
 
-            if (mIsFirstTime)
+            if (!webSocketService.isConnectedUser()) {
+                webSocketService.connectAgain();
+            }
+            mBound = true;
+            bIsRetrying = false;
+
+            if (mIsFirstTime || aListOder == null)
                 getAssignedOrders();
             else
                 refreshAssignedList(true);
+
+            hideLoader();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            DebugUtils.logDebug(TAG, "Disconnected from service " + name);
+            DebugUtils.logDebug(TAG, "Disconnected from service " + name.toString());
             mBound = false;
+
+            if (!bIsRetrying) {
+                bIsRetrying = true;
+                Crashlytics.log(TAG + " Disconnected from service " + name.toString());
+                showLoader("Connecting...", false);
+                bindService();
+            }
+
         }
 
     }
@@ -201,6 +264,10 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     @Override
     public void onReconnecting() {
+        if (!mReconnecting) {
+            mReconnecting = true;
+            showLoader("Connecting...", false);
+        }
     }
 
     @Override
@@ -276,6 +343,29 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                 });
                 mDialog.show();
                 break;
+            case R.id.img_menu_item_rebound:
+
+                if (webSocketService != null) {
+                    if (!webSocketService.isConnectedUser()) {
+                        if (!bIsRetrying && !mReconnecting) {
+                            bIsRetrying = true;
+                            Crashlytics.log("Disconnected from service and didn't pass through Disconnect method");
+                            showLoader("Connecting...", false);
+                            bindService();
+                        } else
+                            WidgetsUtils.createShortToast("The Connection is Already Established");
+                    } else if (!webSocketService.isSocketListener()) {
+                        Crashlytics.log("Listener lost reference after restart: " + SharedPreferencesUtil.getBooleanPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.IS_SERVICE_RESTART));
+                        webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
+                    } else
+                        WidgetsUtils.createShortToast("The Connection is Already Established");
+                } else {
+                    bIsRetrying = true;
+                    Crashlytics.log("Disconnected from service and didn't pass through Disconnect method");
+                    showLoader("Connecting...", false);
+                    bindService();
+                }
+                break;
             default:
                 DebugUtils.logError(TAG, "OnClick(): " + v.getId());
                 break;
@@ -297,6 +387,13 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     protected void onStart() {
         super.onStart();
         bindService();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mTimer.cancel();
+        mTimer = null;
     }
 
     @Override
@@ -324,6 +421,8 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
         refreshAssignedList(true);
 
+        startServiceTimer();
+
     }
 
     @Override
@@ -336,6 +435,12 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         if (imgMenuItemLogOut == null)
             imgMenuItemLogOut = (ImageView) findViewById(R.id.img_menu_item_log_out);
         return imgMenuItemLogOut;
+    }
+
+    private ImageView getImgMenuItemRebound() {
+        if (imgMenuItemRebound == null)
+            imgMenuItemRebound = (ImageView) findViewById(R.id.img_menu_item_rebound);
+        return imgMenuItemRebound;
     }
 
     private TextView getTxtEmptyView() {
@@ -365,6 +470,5 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             mAdapter = new OrderListAdapter(ListOrderAssignedActivity.this, ListOrderAssignedActivity.this);
         return mAdapter;
     }
-
 
 }

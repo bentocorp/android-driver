@@ -4,7 +4,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Binder;
-import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.IBinder;
 
@@ -22,6 +21,7 @@ import com.bentonow.drive.util.GoogleLocationUtil;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.web.BentoDriveAPI;
+import com.crashlytics.android.Crashlytics;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -57,12 +57,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
     private List<OrderItemModel> aListTask;
 
-    private String sUsername = "";
-    private String sPassword = "";
-
     private WebSocketEventListener mSocketListener;
-
-    private CountDownTimer mCountDown;
 
     private Handler mHandler = new Handler();
 
@@ -77,7 +72,18 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     public void onCreate() {
         DebugUtils.logDebug(TAG, "creating new WebSocketService");
         SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
-        aListTask = new ArrayList<>();
+
+        aListTask = null;
+
+        int iNumRestart = SharedPreferencesUtil.getIntPreference(WebSocketService.this, SharedPreferencesUtil.NUM_RECREATED);
+
+        if (SharedPreferencesUtil.getBooleanPreference(WebSocketService.this, SharedPreferencesUtil.IS_SERVICE_RESTART)) {
+            iNumRestart++;
+            SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.NUM_RECREATED, iNumRestart);
+            Crashlytics.log("Recreating Service in a Session Num: " + iNumRestart);
+        }
+
+        SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.IS_SERVICE_RESTART, true);
     }
 
     public void connectWebSocket(String username, String password) {
@@ -148,8 +154,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                     SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.TOKEN, sToken);
                                     SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.IS_USER_LOG_IN, true);
 
-                                    sUsername = sUser;
-                                    sPassword = sPass;
 
                                     if (mSocketListener != null)
                                         mSocketListener.onAuthenticationSuccess(sToken);
@@ -233,6 +237,9 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                         OrderItemModel mOrder = BentoOrderJsonParser.parseBentoOrderItem(args[0].toString());
                         ArrayList<OrderItemModel> aTempListOder = new ArrayList<>();
                         //DebugUtils.logDebug(TAG, "Push: " + aListTask.get(0).getOrderId() + " Type: " + mOrder.getOrderType() + " After: " + mOrder.getAfter());
+
+                        if (aListTask == null)
+                            aListTask = new ArrayList<>();
 
                         boolean bRefresh = true;
                         int iOrderId = -1;
@@ -334,19 +341,17 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 }
             });
 
-            if (BentoDriveUtil.bIsKokushoTesting) {
-               /* DebugUtils.logDebug(TAG, "Pong: Subscribed");
-                mSocket.on("pong", new Emitter.Listener() {
-                    @Override
-                    public void call(Object[] args) {
-                        try {
-                            DebugUtils.logDebug(TAG, "Pong: " + args[0].toString());
-                        } catch (Exception e) {
-                            DebugUtils.logError(TAG, "Pong: " + e.toString());
-                        }
+            DebugUtils.logDebug(TAG, "Pong: Subscribed");
+            mSocket.on("pong", new Emitter.Listener() {
+                @Override
+                public void call(Object[] args) {
+                    try {
+                        // DebugUtils.logDebug(TAG, "Pong: " + args[0].toString());
+                    } catch (Exception e) {
+                        DebugUtils.logError(TAG, "Pong: " + e.toString());
                     }
-                });*/
-            }
+                }
+            });
         }
     }
 
@@ -362,8 +367,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         disconnectingPurposefully = true;
         connecting = false;
         SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
-        sUsername = "";
-        sPassword = "";
 
         OrderItemDAO.deleteAll();
 
@@ -378,7 +381,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     }
 
     public void connectAgain() {
-        connectWebSocket(sUsername, sPassword);
+        connectWebSocket(SharedPreferencesUtil.getStringPreference(WebSocketService.this, SharedPreferencesUtil.USER_NAME), SharedPreferencesUtil.getStringPreference(WebSocketService.this, SharedPreferencesUtil.PASSWORD));
     }
 
     public boolean isConnectedUser() {
@@ -390,9 +393,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     }
 
     public List<OrderItemModel> getListTask() {
-        if (aListTask == null)
-            aListTask = new ArrayList<>();
-
         return aListTask;
     }
 
@@ -403,6 +403,10 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
     public void setWebSocketLister(WebSocketEventListener mListener) {
         mSocketListener = mListener;
+    }
+
+    public boolean isSocketListener() {
+        return mSocketListener != null;
     }
 
     private void startCountDownRestart() {

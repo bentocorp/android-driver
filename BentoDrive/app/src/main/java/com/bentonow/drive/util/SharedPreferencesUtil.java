@@ -19,6 +19,9 @@ public class SharedPreferencesUtil {
     public static final String USE_SAVED_SETTINGS = "USE_SAVED_SETTINGS"; //boolean
     public static final String IS_USER_LOG_IN = "IS_USER_LOG_IN"; //boolean
     public static final String IS_APP_IN_FRONT = "IS_APP_IN_FRONT"; //boolean
+    public static final String IS_APP_ALIVE = "IS_APP_ALIVE"; //boolean
+    public static final String IS_SERVICE_RESTART = "IS_SERVICE_RESTART"; //boolean
+    public static final String NUM_RECREATED = "NUM_RECREATED"; //int
 
 
     /**

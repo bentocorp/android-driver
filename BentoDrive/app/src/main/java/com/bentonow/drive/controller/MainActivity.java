@@ -21,4 +21,15 @@ public class MainActivity extends FragmentActivity {
         SharedPreferencesUtil.setAppPreference(MainActivity.this, SharedPreferencesUtil.IS_APP_IN_FRONT, false);
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        SharedPreferencesUtil.setAppPreference(MainActivity.this, SharedPreferencesUtil.IS_APP_ALIVE, true);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        SharedPreferencesUtil.setAppPreference(MainActivity.this, SharedPreferencesUtil.IS_APP_ALIVE, true);
+    }
 }

@@ -60,6 +60,10 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
             getEditPassword().setText(SharedPreferencesUtil.getStringPreference(LogInActivity.this, SharedPreferencesUtil.PASSWORD));
         }
 
+        SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN, false);
+        SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.IS_SERVICE_RESTART, false);
+        SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.NUM_RECREATED, 0);
+
         getBtnLogIn().setOnClickListener(this);
     }
 
