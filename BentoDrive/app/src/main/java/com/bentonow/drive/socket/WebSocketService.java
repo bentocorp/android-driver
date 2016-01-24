@@ -4,7 +4,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
 
 import com.bentonow.drive.Application;
@@ -59,14 +58,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
     private WebSocketEventListener mSocketListener;
 
-    private Handler mHandler = new Handler();
-
-    private Runnable connectAgain = new Runnable() {
-        public void run() {
-            // connecting = false;
-            connectAgain();
-        }
-    };
 
     @Override
     public void onCreate() {
@@ -192,7 +183,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
                 disconnectingPurposefully = false;
 
-                //  startCountDownRestart();
             }
         });
         mSocket.on(Socket.EVENT_ERROR, new Emitter.Listener() {
@@ -221,7 +211,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 if (mSocketListener != null)
                     mSocketListener.onReconnecting();
 
-                //  startCountDownRestart();
             }
         });
     }
@@ -393,6 +382,9 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     }
 
     public List<OrderItemModel> getListTask() {
+        if (aListTask == null)
+            aListTask = new ArrayList<>();
+
         return aListTask;
     }
 
@@ -407,16 +399,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
     public boolean isSocketListener() {
         return mSocketListener != null;
-    }
-
-    private void startCountDownRestart() {
-        stopCountDownRestart();
-        mHandler.post(connectAgain);
-    }
-
-    private void stopCountDownRestart() {
-        mHandler.removeCallbacks(connectAgain);
-        //   54885700 ext 80447  5554036636  alejrandro ortiz martinez ale_ortizseguros@yahoo.com.mx
     }
 
     @Override
