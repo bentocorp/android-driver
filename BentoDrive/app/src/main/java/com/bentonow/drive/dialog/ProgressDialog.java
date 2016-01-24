@@ -112,7 +112,7 @@ public class ProgressDialog extends android.app.Dialog {
         this.titleTextView = titleTextView;
     }
 
-    @Override
+    /*@Override
     public void dismiss() {
         Animation anim = AnimationUtils.loadAnimation(context, R.anim.dialog_main_hide_amination);
         anim.setAnimationListener(new Animation.AnimationListener() {
@@ -140,7 +140,7 @@ public class ProgressDialog extends android.app.Dialog {
 
         view.startAnimation(anim);
         backView.startAnimation(backAnim);
-    }
+    }*/
 
 
 }
