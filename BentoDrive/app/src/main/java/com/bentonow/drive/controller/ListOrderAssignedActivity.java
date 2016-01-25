@@ -214,17 +214,18 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         Calendar mCalNow = Calendar.getInstance();
         long lSeconds = (mCalNow.getTimeInMillis() - mCalPong.getTimeInMillis()) / 1000;
 
+        String sExceptionMessage = "Exception after: " + lSeconds + " seconds :: ";
+
         if (lSeconds > 3 && !OrderAssignedActivity.bIsOpen) {
             if (mReconnecting || bIsRetrying) {
                 if (bShowMessage)
                     WidgetsUtils.createShortToast("Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ");
 
-                DebugUtils.logDebug(TAG, "Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ");
+                DebugUtils.logDebug(TAG, sExceptionMessage + "Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ");
             } else {
-                String sExceptionMessage = "Exception after: " + lSeconds + " seconds :: ";
-
                 if (webSocketService == null) {
                     sExceptionMessage += "Web Service null :: ";
+                    bindService();
                 } else {
                     sExceptionMessage += "Web Service Not Null :: ";
                     if (!webSocketService.isConnectedUser()) {
@@ -245,15 +246,18 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
                 }
 
-                DebugUtils.logDebug(TAG, sExceptionMessage);
-
-                if (bShowMessage)
-                    WidgetsUtils.createShortToast(sExceptionMessage);
-
                 Crashlytics.logException(new ServiceException(sExceptionMessage));
 
             }
-            bindService();
+
+            webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
+            webSocketService.onNodeEventListener();
+
+            if (bShowMessage)
+                WidgetsUtils.createShortToast(sExceptionMessage);
+
+            DebugUtils.logDebug(TAG, sExceptionMessage);
+
         } else {
             if (bShowMessage)
                 WidgetsUtils.createShortToast("The Connection is Already Established");
@@ -441,8 +445,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
         if (webSocketService != null) {
             aListOder = webSocketService.getListTask();
-            webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
-            webSocketService.onNodeEventListener();
         }
 
         NotificationUtil.cancelAllNotification(ListOrderAssignedActivity.this);
