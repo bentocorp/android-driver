@@ -26,8 +26,8 @@ import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.NotificationUtil;
-import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
+import com.bentonow.drive.util.exception.ServiceException;
 import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.DialogMaterial;
 import com.crashlytics.android.Crashlytics;
@@ -36,6 +36,7 @@ import com.loopj.android.http.TextHttpResponseHandler;
 import org.apache.http.Header;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -65,11 +66,13 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     private Handler mHandler = new Handler();
     private Timer mTimer = new Timer();
+    private Calendar mCalPong;
 
     private boolean mBound = false;
     private boolean mReconnecting = false;
     private boolean mIsFirstTime;
     private boolean bIsRetrying = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -188,6 +191,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     private void startServiceTimer() {
         mTimer = new Timer();
+        DebugUtils.logDebug(TAG, "Created Timer To Check Web Service");
         TimerTask doAsynchronousTask = new TimerTask() {
             @Override
             public void run() {
@@ -195,22 +199,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                     @SuppressWarnings("unchecked")
                     public void run() {
                         try {
-                            if (webSocketService != null) {
-                                if (!webSocketService.isConnectedUser()) {
-                                    if (!bIsRetrying && !mReconnecting) {
-                                        bIsRetrying = true;
-                                        Crashlytics.log("Disconnected from service and didn't pass through Disconnect method");
-                                        showLoader("Connecting...", false);
-                                        bindService();
-                                    }
-                                } else if (!webSocketService.isSocketListener()) {
-                                    Crashlytics.log("Listener lost reference after restart: " + SharedPreferencesUtil.getBooleanPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.IS_SERVICE_RESTART));
-                                    webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
-                                }
-                            }
-                            DebugUtils.logDebug("Is Service Connected: " + SharedPreferencesUtil.getBooleanPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.IS_USER_LOG_IN));
-
-
+                            getServiceStatus(false);
                         } catch (Exception e) {
                             DebugUtils.logError(TAG, e);
                         }
@@ -219,6 +208,58 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             }
         };
         mTimer.schedule(doAsynchronousTask, 1000, 3000);
+    }
+
+    private void getServiceStatus(boolean bShowMessage) {
+        Calendar mCalNow = Calendar.getInstance();
+        long lSeconds = (mCalNow.getTimeInMillis() - mCalPong.getTimeInMillis()) / 1000;
+
+        if (lSeconds > 3 && !OrderAssignedActivity.bIsOpen) {
+            if (mReconnecting || bIsRetrying) {
+                if (bShowMessage)
+                    WidgetsUtils.createShortToast("Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ");
+
+                DebugUtils.logDebug(TAG, "Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ");
+            } else {
+                String sExceptionMessage = "Exception after: " + lSeconds + " seconds :: ";
+
+                if (webSocketService == null) {
+                    sExceptionMessage += "Web Service null :: ";
+                } else {
+                    sExceptionMessage += "Web Service Not Null :: ";
+                    if (!webSocketService.isConnectedUser()) {
+                        sExceptionMessage += "Web Service Connected :: Listener Enable :: ";
+
+                    } else {
+                        sExceptionMessage += "User Connected :: ";
+                    }
+
+                    if (!webSocketService.isSocketListener()) {
+                        sExceptionMessage += "Web Service Connected But lost listener :: ";
+                        webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
+                    } else {
+                        sExceptionMessage += "Listener enable :: ";
+                    }
+
+                    sExceptionMessage += "Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ";
+
+                }
+
+                DebugUtils.logDebug(TAG, sExceptionMessage);
+
+                if (bShowMessage)
+                    WidgetsUtils.createShortToast(sExceptionMessage);
+
+                Crashlytics.logException(new ServiceException(sExceptionMessage));
+
+            }
+            bindService();
+        } else {
+            if (bShowMessage)
+                WidgetsUtils.createShortToast("The Connection is Already Established");
+        }
+
+
     }
 
     private class WebSocketServiceConnection implements ServiceConnection {
@@ -308,6 +349,15 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     }
 
     @Override
+    public void onPong() {
+        if (mCalPong == null) {
+            mCalPong = Calendar.getInstance();
+            startServiceTimer();
+        }
+        mCalPong = Calendar.getInstance();
+    }
+
+    @Override
     public void onUnassign(List<OrderItemModel> mNewList, boolean bRefresh) {
         aListOder = mNewList;
 
@@ -344,27 +394,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                 mDialog.show();
                 break;
             case R.id.img_menu_item_rebound:
-
-                if (webSocketService != null) {
-                    if (!webSocketService.isConnectedUser()) {
-                        if (!bIsRetrying && !mReconnecting) {
-                            bIsRetrying = true;
-                            Crashlytics.log("Disconnected from service and didn't pass through Disconnect method");
-                            showLoader("Connecting...", false);
-                            bindService();
-                        } else
-                            WidgetsUtils.createShortToast("The Connection is Already Established");
-                    } else if (!webSocketService.isSocketListener()) {
-                        Crashlytics.log("Listener lost reference after restart: " + SharedPreferencesUtil.getBooleanPreference(ListOrderAssignedActivity.this, SharedPreferencesUtil.IS_SERVICE_RESTART));
-                        webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
-                    } else
-                        WidgetsUtils.createShortToast("The Connection is Already Established");
-                } else {
-                    bIsRetrying = true;
-                    Crashlytics.log("Disconnected from service and didn't pass through Disconnect method");
-                    showLoader("Connecting...", false);
-                    bindService();
-                }
+                getServiceStatus(true);
                 break;
             default:
                 DebugUtils.logError(TAG, "OnClick(): " + v.getId());
@@ -392,8 +422,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     @Override
     protected void onPause() {
         super.onPause();
-        mTimer.cancel();
-        mTimer = null;
     }
 
     @Override
@@ -420,8 +448,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         NotificationUtil.cancelAllNotification(ListOrderAssignedActivity.this);
 
         refreshAssignedList(true);
-
-        startServiceTimer();
 
     }
 

@@ -75,6 +75,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     private String sOrderId = "";
 
+    public static boolean bIsOpen;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,7 +146,6 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     }
 
     private void acceptOrder() {
-
         showLoader("Progressing....", true);
 
         BentoRestClient.getStatusOrder(ConstantUtil.optStatusOrder.ACCEPT, webSocketService.getListTask().get(0), new TextHttpResponseHandler() {
@@ -558,7 +559,12 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 mAcceptDialog.addAcceptButton("Accept", new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        acceptOrder();
+                        if (!webSocketService.getListTask().isEmpty()) {
+                            acceptOrder();
+                        } else {
+                            WidgetsUtils.createShortToast("Sorry that task is not available anymore");
+                            finish();
+                        }
                     }
                 });
                 mAcceptDialog.show();
@@ -591,6 +597,11 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     @Override
     public void onReconnecting() {
+    }
+
+    @Override
+    public void onPong() {
+
     }
 
     @Override
@@ -649,6 +660,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         super.onStart();
         Intent intent = new Intent(this, WebSocketService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        bIsOpen = true;
     }
 
     @Override
@@ -674,6 +686,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
             unbindService(mConnection);
             mBound = false;
         }
+        bIsOpen = false;
     }
 
     private FrameLayout getContainerMessage() {

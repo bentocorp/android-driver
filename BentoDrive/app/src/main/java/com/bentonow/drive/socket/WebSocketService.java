@@ -104,9 +104,10 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 opts.secure = true;
                 opts.sslContext = sc;
                 opts.hostnameVerifier = new RelaxedHostNameVerifier();
-                opts.reconnectionDelay = 1000;
+                opts.reconnectionDelay = 500;
+                opts.reconnectionDelayMax = 1000;
+                opts.timeout = 1500;
 
-                //opts.timeout = 5000;
                 mSocket = IO.socket(BentoDriveAPI.getNodeUrl(WebSocketService.this), opts);
                 socketAuthenticate(username, password);
                 mSocket.connect();
@@ -190,6 +191,27 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             public void call(Object[] args) {
                 for (Object mObject : args)
                     DebugUtils.logDebug(TAG, "EVENT_ERROR: " + mObject.toString());
+
+
+            }
+        });
+        mSocket.on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener() {
+            @Override
+            public void call(Object[] args) {
+                for (Object mObject : args)
+                    DebugUtils.logDebug(TAG, "EVENT_CONNECT_ERROR: " + mObject.toString());
+
+                if (mSocketListener != null)
+                    mSocketListener.onDisconnect(false);
+
+
+            }
+        });
+        mSocket.on(Socket.EVENT_CONNECT_TIMEOUT, new Emitter.Listener() {
+            @Override
+            public void call(Object[] args) {
+                for (Object mObject : args)
+                    DebugUtils.logDebug(TAG, "EVENT_CONNECT_TIMEOUT: " + mObject.toString());
 
 
             }
@@ -335,7 +357,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 @Override
                 public void call(Object[] args) {
                     try {
-                        // DebugUtils.logDebug(TAG, "Pong: " + args[0].toString());
+                        if (mSocketListener != null)
+                            mSocketListener.onPong();
                     } catch (Exception e) {
                         DebugUtils.logError(TAG, "Pong: " + e.toString());
                     }
@@ -414,7 +437,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                             WidgetsUtils.createShortToast("onLocationUpdated: " + mResponse.getMsg());
                         } else {
                             String sResponse = mResponse.getRet();
-                            DebugUtils.logDebug(TAG, "onLocationUpdated: " + sResponse);
+                            //  DebugUtils.logDebug(TAG, "onLocationUpdated: " + sResponse);
                         }
                     } catch (Exception e) {
                         DebugUtils.logError(TAG, "onLocationUpdated: " + e.toString());

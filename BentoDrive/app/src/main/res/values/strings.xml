@@ -1,7 +1,6 @@
 <resources>
 
-    <!--<string name="order_sms_message">Hi %s,\nThanks for ordering Bento! Your order should arrive in about 20 minutes. We\'ll message you once your order is on its way.</string>-->
-    <string name="order_sms_message"></string>
+    <string name="order_sms_message">Hi %s,\nThanks for ordering Bento! Your order should arrive in about 20 minutes. We\'ll message you once your order is on its way.</string>
     <string name="txt_empty_list_bento">No Tasks</string>
     <string name="dialog_msg_login_empty">Please enter both your username and password</string>
     <string name="error_failed_authenticate">Failed to authenticate</string>

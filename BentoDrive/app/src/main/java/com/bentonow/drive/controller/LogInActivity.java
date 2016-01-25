@@ -179,6 +179,11 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
     }
 
     @Override
+    public void onPong() {
+
+    }
+
+    @Override
     public void onReprioritize(List<OrderItemModel> mNewList, boolean bRefresh) {
 
     }

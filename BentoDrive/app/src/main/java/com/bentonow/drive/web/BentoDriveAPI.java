@@ -38,7 +38,7 @@ public class BentoDriveAPI {
 
     public static String getSendLocationUrl(double dLatitude, double dLongitude) {
         String sUrl = String.format(URL_SEND_LOCATION, SharedPreferencesUtil.getStringPreference(Application.getInstance(), SharedPreferencesUtil.TOKEN), dLatitude, dLongitude);
-        DebugUtils.logDebug("URL: " + sUrl);
+        //  DebugUtils.logDebug("URL: " + sUrl);
         return sUrl;
     }
 

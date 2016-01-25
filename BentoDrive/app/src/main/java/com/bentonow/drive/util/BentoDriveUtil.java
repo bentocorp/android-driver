@@ -12,6 +12,10 @@ import com.bentonow.drive.controller.LogInActivity;
 import com.bentonow.drive.controller.OrderAssignedActivity;
 import com.bentonow.drive.model.Address;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+
 /**
  * Created by Jose Torres on 11/10/15.
  */
@@ -112,5 +116,16 @@ public class BentoDriveUtil {
         }
 
         return bIsValid;
+    }
+
+    public static Calendar getCalendarFromPong(String sPong) {
+        Calendar mCalPong = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.ENGLISH);
+        try {
+            mCalPong.setTime(sdf.parse(sPong));
+        } catch (Exception ex) {
+            DebugUtils.logError("Util", ex.getLocalizedMessage());
+        }
+        return mCalPong;
     }
 }

@@ -11,6 +11,8 @@ public interface WebSocketEventListener {
 
     void onReconnecting();
 
+    void onPong();
+
     void onConnectionError(String sReason);
 
     void onAuthenticationSuccess(String token);
