@@ -2,6 +2,7 @@ package com.bentonow.drive.util;
 
 import android.content.Context;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -46,4 +47,5 @@ public class SoundUtil {
         AudioManager manager = (AudioManager) Application.getInstance().getSystemService(Context.AUDIO_SERVICE);
         return manager.isMusicActive();
     }
+
 }

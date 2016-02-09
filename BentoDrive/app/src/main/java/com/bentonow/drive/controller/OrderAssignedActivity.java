@@ -53,7 +53,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     public static final String TAG = "OrderAssignedActivity";
 
     public static final String TAG_ORDER_ID = "OrderId";
-
+    public static boolean bIsOpen;
     private ImageView imgMenuItemLogOut;
     private FrameLayout mContainerMessage;
     private FrameLayout mContainerCall;
@@ -63,29 +63,21 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     private ButtonFlat btnRejectOrder;
     private ButtonFlat btnCompleteOrder;
     private ButtonFlat btnArrivedOrder;
-
     private TextView txtOrderContent;
     private TextView txtStatus;
     private TextView txtToolbarSubtitle;
-
     private ProgressDialog mLoaderDialog;
-
     private WebSocketService webSocketService = null;
     private ServiceConnection mConnection = new WebSocketServiceConnection();
-
     private List<OrderItemModel> aTempListOder = new ArrayList<>();
-
     private Handler mHandler = new Handler();
     private Timer mTimer = new Timer();
     private Calendar mCalPong;
-
     private boolean mBound = false;
     private boolean mReconnecting = false;
     private boolean bIsRetrying = false;
-    public static boolean bIsOpen;
-
     private String sOrderId = "";
-
+    private DialogMaterial mAcceptDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,7 +145,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_invalid_phone), getString(R.string.dialog_title_invalid_address));
+                mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_invalid_phone), getString(R.string.dialog_title_invalid_address));
                 mAcceptDialog.addAcceptButton("Roger that!");
                 mAcceptDialog.show();
             }
@@ -432,6 +424,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
             public void run() {
                 if (mLoaderDialog != null)
                     mLoaderDialog.dismiss();
+                if (mAcceptDialog != null)
+                    mAcceptDialog.dismiss();
             }
         });
     }
@@ -563,37 +557,6 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
 
     }
 
-    private class WebSocketServiceConnection implements ServiceConnection {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder binder) {
-            DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
-            WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
-            webSocketService = webSocketServiceBinder.getService();
-            webSocketService.setWebSocketLister(OrderAssignedActivity.this);
-            webSocketService.onNodeEventListener();
-
-            mBound = true;
-
-            if (webSocketService.getListTask().isEmpty())
-                finish();
-            else {
-                sOrderId = webSocketService.getListTask().get(0).getOrderId();
-                updateUI();
-            }
-
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            DebugUtils.logDebug(TAG, "Disconnected from service " + name);
-            mBound = true;
-
-            Crashlytics.log(TAG + " Disconnected from service " + name.toString());
-
-            onBackPressed();
-        }
-    }
-
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -605,7 +568,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 break;
             case R.id.container_call:
                 if (webSocketService.getListTask().get(0) != null && webSocketService.getListTask().get(0).getPhone() != null) {
-                    DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_phone), webSocketService.getListTask().get(0).getPhone());
+                    mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_phone), webSocketService.getListTask().get(0).getPhone());
                     mAcceptDialog.addCancelButton("Copy To Clipboard", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -624,7 +587,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 break;
             case R.id.container_map:
                 if (webSocketService.getListTask().get(0) != null) {
-                    DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_address), BentoDriveUtil.getFormatAddress(webSocketService.getListTask().get(0).getAddress()));
+                    mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_address), BentoDriveUtil.getFormatAddress(webSocketService.getListTask().get(0).getAddress()));
                     mAcceptDialog.addCancelButton("Show Options", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -643,7 +606,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                     WidgetsUtils.createShortToast("There was a problem in the map");
                 break;
             case R.id.btn_accept_order:
-                DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
+                mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, getString(R.string.dialog_title_accept_task), getString(R.string.dialog_msg_accept_task));
                 mAcceptDialog.addCancelButton("Cancel");
                 mAcceptDialog.addAcceptButton("Accept", new View.OnClickListener() {
                     @Override
@@ -753,6 +716,20 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     }
 
     @Override
+    public void onModify() {
+        dismissDialog();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                updateUI();
+                DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, null, getString(R.string.notification_modify_task));
+                mAcceptDialog.addAcceptButton("Roger that!");
+                mAcceptDialog.show();
+            }
+        });
+    }
+
+    @Override
     protected void onStart() {
         super.onStart();
         bindService();
@@ -826,7 +803,6 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         return btnArrivedOrder;
     }
 
-
     private ButtonFlat getBtnCompleteOrder() {
         if (btnCompleteOrder == null)
             btnCompleteOrder = (ButtonFlat) findViewById(R.id.btn_complete_order);
@@ -845,11 +821,41 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         return txtStatus;
     }
 
-
     private TextView getTxtToolbarSubtitle() {
         if (txtToolbarSubtitle == null)
             txtToolbarSubtitle = (TextView) findViewById(R.id.txt_toolbar_subtitle);
         return txtToolbarSubtitle;
+    }
+
+    private class WebSocketServiceConnection implements ServiceConnection {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder binder) {
+            DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
+            WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
+            webSocketService = webSocketServiceBinder.getService();
+            webSocketService.setWebSocketLister(OrderAssignedActivity.this);
+            webSocketService.onNodeEventListener();
+
+            mBound = true;
+
+            if (webSocketService.getListTask().isEmpty())
+                finish();
+            else {
+                sOrderId = webSocketService.getListTask().get(0).getOrderId();
+                updateUI();
+            }
+
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            DebugUtils.logDebug(TAG, "Disconnected from service " + name);
+            mBound = true;
+
+            Crashlytics.log(TAG + " Disconnected from service " + name.toString());
+
+            onBackPressed();
+        }
     }
 
 

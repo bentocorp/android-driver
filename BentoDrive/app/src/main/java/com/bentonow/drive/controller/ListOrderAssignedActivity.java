@@ -81,6 +81,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
         getMenuItemLogOut().setOnClickListener(this);
         getImgMenuItemRebound().setOnClickListener(this);
+        getImgMenuItemRebound().setVisibility(View.GONE);
 
         getSwipeRefreshLayout().setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -191,6 +192,13 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     private void startServiceTimer() {
         mTimer = new Timer();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                getImgMenuItemRebound().setVisibility(View.VISIBLE);
+            }
+        });
+
         DebugUtils.logDebug(TAG, "Created Timer To Check Web Service");
         TimerTask doAsynchronousTask = new TimerTask() {
             @Override
@@ -266,47 +274,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     }
 
-    private class WebSocketServiceConnection implements ServiceConnection {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder binder) {
-            DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
-            WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
-            webSocketService = webSocketServiceBinder.getService();
-            webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
-            webSocketService.onNodeEventListener();
-            aListOder = webSocketService.getListTask();
-
-            if (!webSocketService.isConnectedUser()) {
-                webSocketService.connectAgain();
-            }
-            mBound = true;
-            bIsRetrying = false;
-
-            if (mIsFirstTime || aListOder == null)
-                getAssignedOrders();
-            else
-                refreshAssignedList(true);
-
-            hideLoader();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            DebugUtils.logDebug(TAG, "Disconnected from service " + name.toString());
-            mBound = false;
-
-            if (!bIsRetrying) {
-                bIsRetrying = true;
-                Crashlytics.log(TAG + " Disconnected from service " + name.toString());
-                showLoader("Connecting...", false);
-                bindService();
-            }
-
-        }
-
-    }
-
-
     @Override
     public void onReconnecting() {
         if (!mReconnecting) {
@@ -376,6 +343,12 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     }
 
     @Override
+    public void onModify() {
+        WidgetsUtils.createShortToast(R.string.notification_modify_task);
+        refreshAssignedList(true);
+    }
+
+    @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.img_menu_item_log_out:
@@ -398,14 +371,14 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                 mDialog.show();
                 break;
             case R.id.img_menu_item_rebound:
-                getServiceStatus(true);
+                if (mCalPong != null)
+                    getServiceStatus(true);
                 break;
             default:
                 DebugUtils.logError(TAG, "OnClick(): " + v.getId());
                 break;
         }
     }
-
 
     @Override
     public void OnItemClickListener(int iPosition) {
@@ -415,7 +388,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             startActivity(mIntentOrder);
         }
     }
-
 
     @Override
     protected void onStart() {
@@ -458,7 +430,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         AndroidUtil.backToAndroidMenu(ListOrderAssignedActivity.this);
     }
 
-
     private ImageView getMenuItemLogOut() {
         if (imgMenuItemLogOut == null)
             imgMenuItemLogOut = (ImageView) findViewById(R.id.img_menu_item_log_out);
@@ -483,7 +454,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         return swipeRefreshLayout;
     }
 
-
     private RecyclerView getListOrder() {
         if (mRecyclerView == null) {
             mRecyclerView = (RecyclerView) findViewById(R.id.list_assigned_orders);
@@ -497,6 +467,46 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         if (mAdapter == null)
             mAdapter = new OrderListAdapter(ListOrderAssignedActivity.this, ListOrderAssignedActivity.this);
         return mAdapter;
+    }
+
+    private class WebSocketServiceConnection implements ServiceConnection {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder binder) {
+            DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
+            WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
+            webSocketService = webSocketServiceBinder.getService();
+            webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
+            webSocketService.onNodeEventListener();
+            aListOder = webSocketService.getListTask();
+
+            if (!webSocketService.isConnectedUser()) {
+                webSocketService.connectAgain();
+            }
+            mBound = true;
+            bIsRetrying = false;
+
+            if (mIsFirstTime || aListOder == null)
+                getAssignedOrders();
+            else
+                refreshAssignedList(true);
+
+            hideLoader();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            DebugUtils.logDebug(TAG, "Disconnected from service " + name.toString());
+            mBound = false;
+
+            if (!bIsRetrying) {
+                bIsRetrying = true;
+                Crashlytics.log(TAG + " Disconnected from service " + name.toString());
+                showLoader("Connecting...", false);
+                bindService();
+            }
+
+        }
+
     }
 
 }

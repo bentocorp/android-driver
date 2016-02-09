@@ -18,6 +18,7 @@
     <string name="dialog_title_invalid_phone">Invalid Phone Number</string>
     <string name="dialog_title_invalid_address">SMS was not sent! Please inform dispatcher.</string>
     <string name="notification_assigned_task">Task assigned!</string>
+    <string name="notification_modify_task">Task modified!</string>
     <string name="notification_un_assigned_task">Task removed!</string>
     <string name="notification_change_task">Task switched!</string>
 

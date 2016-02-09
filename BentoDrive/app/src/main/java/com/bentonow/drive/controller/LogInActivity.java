@@ -188,6 +188,11 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
 
     }
 
+    @Override
+    public void onModify() {
+
+    }
+
     private class WebSocketServiceConnection implements ServiceConnection {
         @Override
         public void onServiceConnected(ComponentName name, IBinder binder) {

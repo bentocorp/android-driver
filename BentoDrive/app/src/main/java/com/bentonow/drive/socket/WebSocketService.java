@@ -57,7 +57,19 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     private List<OrderItemModel> aListTask;
 
     private WebSocketEventListener mSocketListener;
+    private TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+            return new java.security.cert.X509Certificate[]{};
+        }
 
+        public void checkClientTrusted(X509Certificate[] chain,
+                                       String authType) throws CertificateException {
+        }
+
+        public void checkServerTrusted(X509Certificate[] chain,
+                                       String authType) throws CertificateException {
+        }
+    }};
 
     @Override
     public void onCreate() {
@@ -119,7 +131,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             }
         }
     }
-
 
     public void socketAuthenticate(final String sUser, final String sPass) {
         mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
@@ -288,7 +299,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
                                 if (mSocketListener != null)
                                     mSocketListener.onAssign(aListTask, bRefresh);
-
                                 break;
                             case "UNASSIGN":
                                 for (int a = 0; a < aListTask.size(); a++)
@@ -341,6 +351,27 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                 if (mSocketListener != null)
                                     mSocketListener.onReprioritize(aListTask, bRefresh);
                                 break;
+                            case "MODIFY":
+                                bRefresh = false;
+
+                                for (int a = 0; a < aListTask.size(); a++) {
+                                    if (mOrder.getOrderId().equals(aListTask.get(a).getOrderId())) {
+                                        aListTask.get(a).setPhone(mOrder.getPhone());
+                                        aListTask.get(a).setAddress(mOrder.getAddress());
+                                        aListTask.get(a).setStatus(mOrder.getStatus());
+                                        aListTask.get(a).setName(mOrder.getName());
+                                        aListTask.get(a).setItem(mOrder.getItem());
+                                        OrderItemDAO.update(aListTask.get(a));
+                                        bRefresh = a == 0;
+                                        break;
+                                    }
+                                }
+
+                                if (mSocketListener != null && bRefresh) {
+                                    mSocketListener.onModify();
+                                    BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.MODIFY);
+                                }
+                                break;
                             default:
                                 DebugUtils.logDebug(TAG, "OrderType: Unhandled " + mOrder.getOrderType());
                                 break;
@@ -373,7 +404,6 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             mSocket.off("pong");
         }
     }
-
 
     public void disconnectWebSocket() {
         disconnectingPurposefully = true;
@@ -475,29 +505,15 @@ public class WebSocketService extends Service implements UpdateLocationListener 
         return true;
     }
 
-    public class WebSocketServiceBinder extends Binder {
-        public WebSocketService getService() {
-            return WebSocketService.this;
-        }
-    }
-
-    private TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-            return new java.security.cert.X509Certificate[]{};
-        }
-
-        public void checkClientTrusted(X509Certificate[] chain,
-                                       String authType) throws CertificateException {
-        }
-
-        public void checkServerTrusted(X509Certificate[] chain,
-                                       String authType) throws CertificateException {
-        }
-    }};
-
     public static class RelaxedHostNameVerifier implements HostnameVerifier {
         public boolean verify(String hostname, SSLSession session) {
             return true;
+        }
+    }
+
+    public class WebSocketServiceBinder extends Binder {
+        public WebSocketService getService() {
+            return WebSocketService.this;
         }
     }
 }

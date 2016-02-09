@@ -85,6 +85,14 @@ public class BentoDriveUtil {
                     NotificationUtil.showBentoDriveNotification(ctx, R.string.notification_un_assigned_task, uriSound);
                 }
                 break;
+            case MODIFY:
+                uriSound = Uri.parse("android.resource://" + Application.getInstance().getPackageName() + "/raw/task_modified");
+                if (SharedPreferencesUtil.getBooleanPreference(ctx, SharedPreferencesUtil.IS_APP_IN_FRONT)) {
+                    SoundUtil.playNotificationSound(uriSound);
+                } else {
+                    NotificationUtil.showBentoDriveNotification(ctx, R.string.notification_modify_task, uriSound);
+                }
+                break;
         }
     }
 

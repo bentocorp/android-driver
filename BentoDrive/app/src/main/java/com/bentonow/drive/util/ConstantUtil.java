@@ -7,6 +7,6 @@ public class ConstantUtil {
 
     public enum optStatusOrder {ACCEPT, REJECT, ARRIVED, COMPLETE}
 
-    public enum optTaskChanged {ASSIGN, REMOVED, SWITCHED}
+    public enum optTaskChanged {ASSIGN, REMOVED, SWITCHED, MODIFY}
 
 }

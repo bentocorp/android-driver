@@ -23,11 +23,11 @@ public interface WebSocketEventListener {
 
     void onAssign(List<OrderItemModel> mNewList, boolean bRefresh);
 
-
     void onUnassign(List<OrderItemModel> mNewList, boolean bRefresh);
 
-
     void onReprioritize(List<OrderItemModel> mNewList, boolean bRefresh);
+
+    void onModify();
 
 
 }

@@ -56,6 +56,20 @@ public class OrderItemDAO {
         }
     }
 
+    public static void update(OrderItemModel mOldModel, OrderItemModel mNewModel) {
+        try {
+            mOldModel.setPhone(mNewModel.getPhone());
+            mOldModel.setAddress(mNewModel.getAddress());
+            mOldModel.setStatus(mNewModel.getStatus());
+            mOldModel.setName(mNewModel.getName());
+            mOldModel.setItem(mNewModel.getItem());
+            mOldModel.setAddressId(mOldModel.getAddress().save());
+            mOldModel.save();
+        } catch (Exception ex) {
+            DebugUtils.logError(TAG, ex);
+        }
+    }
+
     public static void save(OrderItemModel mOrder) {
         try {
             mOrder.setId(null);
