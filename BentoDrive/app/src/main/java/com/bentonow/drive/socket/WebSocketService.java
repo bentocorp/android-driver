@@ -368,8 +368,8 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                 }
 
                                 if (mSocketListener != null && bRefresh) {
-                                    mSocketListener.onModify();
                                     BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.MODIFY);
+                                    mSocketListener.onModify();
                                 }
                                 break;
                             default:
