@@ -229,7 +229,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                 if (bShowMessage)
                     WidgetsUtils.createShortToast("Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ");
 
-                DebugUtils.logDebug(TAG, sExceptionMessage + "Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ");
+                DebugUtils.logError(TAG, sExceptionMessage + "Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ");
             } else {
                 if (webSocketService == null) {
                     sExceptionMessage += "Web Service null :: ";
@@ -264,7 +264,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             if (bShowMessage)
                 WidgetsUtils.createShortToast(sExceptionMessage);
 
-            DebugUtils.logDebug(TAG, sExceptionMessage);
+            DebugUtils.logError(TAG, sExceptionMessage);
 
         } else {
             if (bShowMessage)

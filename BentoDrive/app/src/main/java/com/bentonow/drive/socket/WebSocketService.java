@@ -32,6 +32,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -41,8 +42,10 @@ import javax.net.ssl.X509TrustManager;
 
 import io.socket.client.Ack;
 import io.socket.client.IO;
+import io.socket.client.Manager;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
+import io.socket.engineio.client.Transport;
 
 public class WebSocketService extends Service implements UpdateLocationListener {
 
@@ -244,6 +247,27 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 if (mSocketListener != null)
                     mSocketListener.onReconnecting();
 
+            }
+        });
+        mSocket.on(Manager.EVENT_TRANSPORT, new Emitter.Listener() {
+
+            @Override
+            public void call(Object... args) {
+                Transport transport = (Transport) args[0];
+
+                transport.on(Transport.EVENT_ERROR, new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        Map<String, List<String>> headers = (Map<String, List<String>>) args[0];
+                        DebugUtils.logError(TAG, "Transport.EVENT_ERROR: " + headers.toString());
+                    }
+                }).on(Transport.EVENT_CLOSE, new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        Map<String, List<String>> headers = (Map<String, List<String>>) args[0];
+                        DebugUtils.logError(TAG, "Transport.EVENT_CLOSE: " + headers.toString());
+                    }
+                });
             }
         });
     }
@@ -474,6 +498,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                         WidgetsUtils.createShortToast("onLocationUpdated: " + e.toString());
                     }
                 }
+
             });
         } else {
             DebugUtils.logError(TAG, "Cant send the current location");
