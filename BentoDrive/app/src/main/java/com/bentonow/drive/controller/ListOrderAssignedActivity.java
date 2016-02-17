@@ -19,12 +19,14 @@ import com.bentonow.drive.controller.adapter.OrderListAdapter;
 import com.bentonow.drive.dialog.ProgressDialog;
 import com.bentonow.drive.listener.RecyclerListListener;
 import com.bentonow.drive.listener.WebSocketEventListener;
+import com.bentonow.drive.model.MixpanelNodeModel;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.parse.jackson.BentoOrderJsonParser;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
+import com.bentonow.drive.util.MixpanelUtils;
 import com.bentonow.drive.util.NotificationUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.util.exception.ServiceException;
@@ -72,6 +74,11 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     private boolean mReconnecting = false;
     private boolean mIsFirstTime;
     private boolean bIsRetrying = false;
+    private boolean bIsTransportError = false;
+    private boolean bIsTransportClosed = false;
+
+    private String sTransportError = "";
+    private String sTransportClosed = "";
 
 
     @Override
@@ -220,6 +227,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     private void getServiceStatus(boolean bShowMessage) {
         Calendar mCalNow = Calendar.getInstance();
+        MixpanelNodeModel mNodeModel = new MixpanelNodeModel();
         long lSeconds = (mCalNow.getTimeInMillis() - mCalPong.getTimeInMillis()) / 1000;
 
         String sExceptionMessage = "Exception after: " + lSeconds + " seconds :: ";
@@ -254,12 +262,25 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
                 }
 
+                mNodeModel.setbIsWebServiceNull(webSocketService == null);
+                mNodeModel.setbIsUserLogged(webSocketService.isConnectedUser());
+                mNodeModel.setbIsListenerEnable(webSocketService.isSocketListener());
+                mNodeModel.setbIsReconnecting(mReconnecting);
+                mNodeModel.setbIsRetrying(bIsRetrying);
+                mNodeModel.setbIsTransportClosed(bIsTransportClosed);
+                mNodeModel.setbIsTransportError(bIsTransportError);
+                mNodeModel.setsTransportClosed(sTransportClosed);
+                mNodeModel.setsTransportError(sTransportError);
+                mNodeModel.setSeconds(lSeconds);
+
+                MixpanelUtils.trackNodeIntermittent(ListOrderAssignedActivity.this, mNodeModel);
                 Crashlytics.logException(new ServiceException(sExceptionMessage));
 
             }
 
             webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
             webSocketService.onNodeEventListener();
+
 
             if (bShowMessage)
                 WidgetsUtils.createShortToast(sExceptionMessage);
@@ -270,7 +291,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
             if (bShowMessage)
                 WidgetsUtils.createShortToast("The Connection is Already Established");
         }
-
 
     }
 
@@ -290,6 +310,10 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     @Override
     public void onAuthenticationSuccess(String token) {
         if (mReconnecting) {
+            sTransportClosed = "";
+            sTransportError = "";
+            bIsTransportClosed = false;
+            bIsTransportError = false;
             hideLoader();
             WidgetsUtils.createShortToast("Connection Restored");
             showLoader("Downloading...", true);
@@ -346,6 +370,18 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     public void onModify() {
         WidgetsUtils.createShortToast(R.string.notification_modify_task);
         refreshAssignedList(true);
+    }
+
+    @Override
+    public void onTransportEventError(String sError) {
+        sTransportError = sError;
+        bIsTransportError = true;
+    }
+
+    @Override
+    public void onTransportEventClose(String sError) {
+        sTransportClosed = sError;
+        bIsTransportClosed = true;
     }
 
     @Override

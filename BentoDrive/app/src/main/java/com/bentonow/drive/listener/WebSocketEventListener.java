@@ -29,5 +29,9 @@ public interface WebSocketEventListener {
 
     void onModify();
 
+    void onTransportEventError(String sError);
+
+    void onTransportEventClose(String sError);
+
 
 }

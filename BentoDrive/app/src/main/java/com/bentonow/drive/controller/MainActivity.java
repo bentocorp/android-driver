@@ -2,6 +2,7 @@ package com.bentonow.drive.controller;
 
 import android.support.v4.app.FragmentActivity;
 
+import com.bentonow.drive.util.MixpanelUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 
 /**
@@ -11,25 +12,26 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     protected void onResume() {
-        super.onResume();
         SharedPreferencesUtil.setAppPreference(MainActivity.this, SharedPreferencesUtil.IS_APP_IN_FRONT, true);
+        super.onResume();
     }
 
     @Override
     protected void onPause() {
-        super.onPause();
         SharedPreferencesUtil.setAppPreference(MainActivity.this, SharedPreferencesUtil.IS_APP_IN_FRONT, false);
+        super.onPause();
     }
 
     @Override
     protected void onStart() {
-        super.onStart();
         SharedPreferencesUtil.setAppPreference(MainActivity.this, SharedPreferencesUtil.IS_APP_ALIVE, true);
+        super.onStart();
     }
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        MixpanelUtils.getMixpanelApi(MainActivity.this).flush();
         SharedPreferencesUtil.setAppPreference(MainActivity.this, SharedPreferencesUtil.IS_APP_ALIVE, true);
+        super.onDestroy();
     }
 }

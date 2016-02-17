@@ -730,6 +730,16 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
     }
 
     @Override
+    public void onTransportEventError(String sError) {
+
+    }
+
+    @Override
+    public void onTransportEventClose(String sError) {
+
+    }
+
+    @Override
     protected void onStart() {
         super.onStart();
         bindService();

@@ -20,6 +20,7 @@ import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.LocationUtils;
+import com.bentonow.drive.util.MixpanelUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
 import com.bentonow.drive.widget.material.DialogMaterial;
@@ -136,13 +137,15 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
     @Override
     public void onAuthenticationSuccess(String sToken) {
         if (!bAlreadyOpen) {
+            hideDialogs();
             bAlreadyOpen = true;
             SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.USER_NAME, getEditUsername().getText().toString());
             SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.PASSWORD, getEditPassword().getText().toString());
             SharedPreferencesUtil.setAppPreference(LogInActivity.this, SharedPreferencesUtil.USE_SAVED_SETTINGS, true);
 
             DebugUtils.logDebug(TAG, "Token: " + sToken);
-            hideDialogs();
+
+            MixpanelUtils.logInUser(LogInActivity.this);
 
             BentoDriveUtil.openListBentoActivity(LogInActivity.this);
         }
@@ -190,6 +193,16 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
 
     @Override
     public void onModify() {
+
+    }
+
+    @Override
+    public void onTransportEventError(String sError) {
+
+    }
+
+    @Override
+    public void onTransportEventClose(String sError) {
 
     }
 

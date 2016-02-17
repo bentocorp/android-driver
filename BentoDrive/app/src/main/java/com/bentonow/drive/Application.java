@@ -49,7 +49,6 @@ public class Application extends com.orm.SugarApp {
         DebugUtils.logDebug("Application", "onTerminate()");
     }
 
-
     public void doInBackground(Runnable runnable) {
         new Thread(runnable).start();
     }
