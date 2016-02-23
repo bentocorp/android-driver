@@ -9,6 +9,7 @@ import android.os.IBinder;
 import com.bentonow.drive.Application;
 import com.bentonow.drive.listener.UpdateLocationListener;
 import com.bentonow.drive.listener.WebSocketEventListener;
+import com.bentonow.drive.model.MixpanelNodeModel;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.model.SocketResponseModel;
 import com.bentonow.drive.model.sugar.OrderItemDAO;
@@ -17,8 +18,10 @@ import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.ConstantUtil;
 import com.bentonow.drive.util.DebugUtils;
 import com.bentonow.drive.util.GoogleLocationUtil;
+import com.bentonow.drive.util.MixpanelUtils;
 import com.bentonow.drive.util.SharedPreferencesUtil;
 import com.bentonow.drive.util.WidgetsUtils;
+import com.bentonow.drive.util.exception.ServiceException;
 import com.bentonow.drive.web.BentoDriveAPI;
 import com.crashlytics.android.Crashlytics;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -31,6 +34,7 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +60,12 @@ public class WebSocketService extends Service implements UpdateLocationListener 
     private Socket mSocket = null;
     private boolean connecting = false;
     private boolean disconnectingPurposefully = false;
+    private boolean bIsTransportError = false;
+    private boolean bIsTransportClosed = false;
+    private boolean mReconnecting = false;
+    private String sTransportError = "";
+    private String sTransportClosed = "";
+    private Calendar mCalPong;
 
     private List<OrderItemModel> aListTask;
 
@@ -121,7 +131,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 opts.hostnameVerifier = new RelaxedHostNameVerifier();
                 opts.reconnectionDelay = 500;
                 opts.reconnectionDelayMax = 1000;
-                opts.timeout = 1500;
+                opts.timeout = 5000;
 
                 mSocket = IO.socket(BentoDriveAPI.getNodeUrl(WebSocketService.this), opts);
                 socketAuthenticate(username, password);
@@ -160,6 +170,11 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                                     SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.TOKEN, sToken);
                                     SharedPreferencesUtil.setAppPreference(WebSocketService.this, SharedPreferencesUtil.IS_USER_LOG_IN, true);
 
+                                    sTransportClosed = "";
+                                    sTransportError = "";
+                                    bIsTransportClosed = false;
+                                    bIsTransportError = false;
+                                    mReconnecting = false;
 
                                     if (mSocketListener != null)
                                         mSocketListener.onAuthenticationSuccess(sToken);
@@ -187,11 +202,26 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 }
             }
         });
-        mSocket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+        mSocket.on(Socket.EVENT_RECONNECT, new Emitter.Listener() {
             @Override
             public void call(Object[] args) {
                 for (Object mObject : args)
+                    DebugUtils.logDebug(TAG, "EVENT_RECONNECT: " + mObject.toString());
+
+
+            }
+        });
+        mSocket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+            @Override
+            public void call(Object[] args) {
+                for (Object mObject : args) {
                     DebugUtils.logDebug(TAG, "EVENT_DISCONNECT: " + mObject.toString());
+
+                    if (mObject.toString().contains("disconnect"))
+                        mSocket.connect();
+                }
+
+                mReconnecting = true;
 
                 if (mSocketListener != null)
                     mSocketListener.onDisconnect(disconnectingPurposefully);
@@ -238,6 +268,14 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
             }
         });
+        mSocket.on(Socket.EVENT_RECONNECT_FAILED, new Emitter.Listener() {
+            @Override
+            public void call(Object[] args) {
+                for (Object mObject : args)
+                    DebugUtils.logDebug(TAG, "EVENT_RECONNECT_FAILED: " + mObject.toString());
+
+            }
+        });
         mSocket.on(Socket.EVENT_RECONNECTING, new Emitter.Listener() {
             @Override
             public void call(Object[] args) {
@@ -259,12 +297,16 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                     @Override
                     public void call(Object... args) {
                         Map<String, List<String>> headers = (Map<String, List<String>>) args[0];
+                        sTransportError = headers.toString();
+                        bIsTransportError = true;
                         DebugUtils.logError(TAG, "Transport.EVENT_ERROR: " + headers.toString());
                     }
                 }).on(Transport.EVENT_CLOSE, new Emitter.Listener() {
                     @Override
                     public void call(Object... args) {
                         Map<String, List<String>> headers = (Map<String, List<String>>) args[0];
+                        sTransportClosed = headers.toString();
+                        bIsTransportClosed = true;
                         DebugUtils.logError(TAG, "Transport.EVENT_CLOSE: " + headers.toString());
                     }
                 });
@@ -412,8 +454,10 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 @Override
                 public void call(Object[] args) {
                     try {
-                        if (mSocketListener != null)
-                            mSocketListener.onPong();
+                        getServiceStatus();
+
+                        mCalPong = Calendar.getInstance();
+
                     } catch (Exception e) {
                         DebugUtils.logError(TAG, "Pong: " + e.toString());
                     }
@@ -528,6 +572,61 @@ public class WebSocketService extends Service implements UpdateLocationListener 
             stopSelf();
         }
         return true;
+    }
+
+    private void getServiceStatus() {
+        if (mCalPong == null) {
+            mCalPong = Calendar.getInstance();
+        }
+
+        Calendar mCalNow = Calendar.getInstance();
+        MixpanelNodeModel mNodeModel = new MixpanelNodeModel();
+        long lSeconds = (mCalNow.getTimeInMillis() - mCalPong.getTimeInMillis()) / 1000;
+
+        String sExceptionMessage = "Exception after: " + lSeconds + " seconds :: ";
+
+        if (lSeconds > 3) {
+            if (mReconnecting) {
+                DebugUtils.logError(TAG, sExceptionMessage + "Reconnecting " + mReconnecting + " :: ");
+            } else {
+                sExceptionMessage += "Web Service Not Null :: ";
+                if (!isConnectedUser()) {
+                    sExceptionMessage += "Web Service Connected :: Listener Enable :: ";
+
+                } else {
+                    sExceptionMessage += "User Connected :: ";
+                }
+
+                if (!isSocketListener()) {
+                    sExceptionMessage += "Web Service Connected But lost listener :: ";
+                } else {
+                    sExceptionMessage += "Listener enable :: ";
+                }
+
+                sExceptionMessage += "Reconnecting :: " + mReconnecting + " :: ";
+
+                mNodeModel.setbIsWebServiceNull(false);
+                mNodeModel.setbIsUserLogged(isConnectedUser());
+                mNodeModel.setbIsListenerEnable(isSocketListener());
+                mNodeModel.setbIsReconnecting(mReconnecting);
+                mNodeModel.setbIsRetrying(false);
+                mNodeModel.setbIsTransportClosed(bIsTransportClosed);
+                mNodeModel.setbIsTransportError(bIsTransportError);
+                mNodeModel.setsTransportClosed(sTransportClosed);
+                mNodeModel.setsTransportError(sTransportError);
+                mNodeModel.setSeconds(lSeconds);
+
+                MixpanelUtils.trackNodeIntermittent(WebSocketService.this, mNodeModel);
+                Crashlytics.logException(new ServiceException(sExceptionMessage));
+
+            }
+
+//            WidgetsUtils.createShortToast(sExceptionMessage);
+
+            DebugUtils.logError(TAG, sExceptionMessage);
+
+        }
+
     }
 
     public static class RelaxedHostNameVerifier implements HostnameVerifier {

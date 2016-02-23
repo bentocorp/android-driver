@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
@@ -19,17 +18,14 @@ import com.bentonow.drive.controller.adapter.OrderListAdapter;
 import com.bentonow.drive.dialog.ProgressDialog;
 import com.bentonow.drive.listener.RecyclerListListener;
 import com.bentonow.drive.listener.WebSocketEventListener;
-import com.bentonow.drive.model.MixpanelNodeModel;
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.parse.jackson.BentoOrderJsonParser;
 import com.bentonow.drive.socket.WebSocketService;
 import com.bentonow.drive.util.AndroidUtil;
 import com.bentonow.drive.util.BentoDriveUtil;
 import com.bentonow.drive.util.DebugUtils;
-import com.bentonow.drive.util.MixpanelUtils;
 import com.bentonow.drive.util.NotificationUtil;
 import com.bentonow.drive.util.WidgetsUtils;
-import com.bentonow.drive.util.exception.ServiceException;
 import com.bentonow.drive.web.BentoRestClient;
 import com.bentonow.drive.widget.material.DialogMaterial;
 import com.crashlytics.android.Crashlytics;
@@ -38,10 +34,7 @@ import com.loopj.android.http.TextHttpResponseHandler;
 import org.apache.http.Header;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Created by Jose Torres on 11/10/15.
@@ -66,19 +59,10 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     private List<OrderItemModel> aListOder = new ArrayList<>();
 
-    private Handler mHandler = new Handler();
-    private Timer mTimer = new Timer();
-    private Calendar mCalPong;
-
     private boolean mBound = false;
     private boolean mReconnecting = false;
     private boolean mIsFirstTime;
     private boolean bIsRetrying = false;
-    private boolean bIsTransportError = false;
-    private boolean bIsTransportClosed = false;
-
-    private String sTransportError = "";
-    private String sTransportClosed = "";
 
 
     @Override
@@ -197,102 +181,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
-    private void startServiceTimer() {
-        mTimer = new Timer();
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                getImgMenuItemRebound().setVisibility(View.VISIBLE);
-            }
-        });
-
-        DebugUtils.logDebug(TAG, "Created Timer To Check Web Service");
-        TimerTask doAsynchronousTask = new TimerTask() {
-            @Override
-            public void run() {
-                mHandler.post(new Runnable() {
-                    @SuppressWarnings("unchecked")
-                    public void run() {
-                        try {
-                            getServiceStatus(false);
-                        } catch (Exception e) {
-                            DebugUtils.logError(TAG, e);
-                        }
-                    }
-                });
-            }
-        };
-        mTimer.schedule(doAsynchronousTask, 1000, 3000);
-    }
-
-    private void getServiceStatus(boolean bShowMessage) {
-        Calendar mCalNow = Calendar.getInstance();
-        MixpanelNodeModel mNodeModel = new MixpanelNodeModel();
-        long lSeconds = (mCalNow.getTimeInMillis() - mCalPong.getTimeInMillis()) / 1000;
-
-        String sExceptionMessage = "Exception after: " + lSeconds + " seconds :: ";
-
-        if (lSeconds > 3 && !OrderAssignedActivity.bIsOpen) {
-            if (mReconnecting || bIsRetrying) {
-                if (bShowMessage)
-                    WidgetsUtils.createShortToast("Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ");
-
-                DebugUtils.logError(TAG, sExceptionMessage + "Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ");
-            } else {
-                if (webSocketService == null) {
-                    sExceptionMessage += "Web Service null :: ";
-                    bindService();
-                } else {
-                    sExceptionMessage += "Web Service Not Null :: ";
-                    if (!webSocketService.isConnectedUser()) {
-                        sExceptionMessage += "Web Service Connected :: Listener Enable :: ";
-
-                    } else {
-                        sExceptionMessage += "User Connected :: ";
-                    }
-
-                    if (!webSocketService.isSocketListener()) {
-                        sExceptionMessage += "Web Service Connected But lost listener :: ";
-                        webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
-                    } else {
-                        sExceptionMessage += "Listener enable :: ";
-                    }
-
-                    sExceptionMessage += "Retrying :: " + bIsRetrying + " Reconnecting :: " + mReconnecting + " :: ";
-
-                }
-
-                mNodeModel.setbIsWebServiceNull(webSocketService == null);
-                mNodeModel.setbIsUserLogged(webSocketService.isConnectedUser());
-                mNodeModel.setbIsListenerEnable(webSocketService.isSocketListener());
-                mNodeModel.setbIsReconnecting(mReconnecting);
-                mNodeModel.setbIsRetrying(bIsRetrying);
-                mNodeModel.setbIsTransportClosed(bIsTransportClosed);
-                mNodeModel.setbIsTransportError(bIsTransportError);
-                mNodeModel.setsTransportClosed(sTransportClosed);
-                mNodeModel.setsTransportError(sTransportError);
-                mNodeModel.setSeconds(lSeconds);
-
-                MixpanelUtils.trackNodeIntermittent(ListOrderAssignedActivity.this, mNodeModel);
-                Crashlytics.logException(new ServiceException(sExceptionMessage));
-
-            }
-
-            webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
-            webSocketService.onNodeEventListener();
-
-
-            if (bShowMessage)
-                WidgetsUtils.createShortToast(sExceptionMessage);
-
-            DebugUtils.logError(TAG, sExceptionMessage);
-
-        } else {
-            if (bShowMessage)
-                WidgetsUtils.createShortToast("The Connection is Already Established");
-        }
-
-    }
 
     @Override
     public void onReconnecting() {
@@ -310,10 +198,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
     @Override
     public void onAuthenticationSuccess(String token) {
         if (mReconnecting) {
-            sTransportClosed = "";
-            sTransportError = "";
-            bIsTransportClosed = false;
-            bIsTransportError = false;
             hideLoader();
             WidgetsUtils.createShortToast("Connection Restored");
             showLoader("Downloading...", true);
@@ -345,11 +229,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     @Override
     public void onPong() {
-        if (mCalPong == null) {
-            mCalPong = Calendar.getInstance();
-            startServiceTimer();
-        }
-        mCalPong = Calendar.getInstance();
+
     }
 
     @Override
@@ -374,14 +254,12 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     @Override
     public void onTransportEventError(String sError) {
-        sTransportError = sError;
-        bIsTransportError = true;
+
     }
 
     @Override
     public void onTransportEventClose(String sError) {
-        sTransportClosed = sError;
-        bIsTransportClosed = true;
+
     }
 
     @Override
@@ -405,10 +283,6 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
                     }
                 });
                 mDialog.show();
-                break;
-            case R.id.img_menu_item_rebound:
-                if (mCalPong != null)
-                    getServiceStatus(true);
                 break;
             default:
                 DebugUtils.logError(TAG, "OnClick(): " + v.getId());

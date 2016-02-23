@@ -42,7 +42,7 @@ public class MixpanelUtils {
             JSONObject mJsonNode = new JSONObject();
             mJsonNode.put("Listener Enable", mNode.isbIsListenerEnable());
             mJsonNode.put("Reconnecting", mNode.isbIsReconnecting());
-            mJsonNode.put("Retrying", mNode.isbIsRetrying());
+            mJsonNode.put("Recreating", mNode.isbIsRetrying());
             mJsonNode.put("Service Null", mNode.isbIsWebServiceNull());
             mJsonNode.put("Transport Closed", mNode.isbIsTransportClosed());
             mJsonNode.put("Transport Error", mNode.isbIsTransportError());
@@ -51,11 +51,6 @@ public class MixpanelUtils {
             mJsonNode.put("Seconds", mNode.getSeconds());
             try {
                 CallStatusModel mCallStatus = TelephonyUtils.getInformation(mContext);
-                mJsonNode.put("Cell", mCallStatus.getCell());
-                mJsonNode.put("Cell Location", mCallStatus.getCellLocation());
-                mJsonNode.put("Gsm Location", mCallStatus.getGsmLocation());
-                mJsonNode.put("Mcc", mCallStatus.getMcc());
-                mJsonNode.put("Mcn", mCallStatus.getMcn());
                 mJsonNode.put("Model", mCallStatus.getModel());
                 mJsonNode.put("Operator", mCallStatus.getOperator());
                 mJsonNode.put("Signal Strength", mCallStatus.getStrenght());

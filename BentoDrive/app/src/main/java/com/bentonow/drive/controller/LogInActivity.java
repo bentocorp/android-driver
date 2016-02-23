@@ -87,7 +87,7 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
     private void logInDrive() {
         if (mBound) {
             if (AndroidUtil.isNetworkAvailable(LogInActivity.this)) {
-                getLoaderDialog().show();
+                showDialog();
                 startLogInCountDown();
 
                 webSocketService.connectWebSocket(getEditUsername().getText().toString(), getEditPassword().getText().toString());
@@ -119,9 +119,15 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                getLoaderDialog().dismiss();
+                if (mLoaderDialog != null && !mBound)
+                    mLoaderDialog.dismiss();
             }
         });
+    }
+
+    private void showDialog() {
+        if (mLoaderDialog == null || !mLoaderDialog.isShowing())
+            mLoaderDialog = new ProgressDialog(LogInActivity.this, "Logging in");
     }
 
     @Override
@@ -206,23 +212,6 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
 
     }
 
-    private class WebSocketServiceConnection implements ServiceConnection {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder binder) {
-            DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
-            WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
-            webSocketService = webSocketServiceBinder.getService();
-            webSocketService.setWebSocketLister(LogInActivity.this);
-            mBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            DebugUtils.logDebug(TAG, "Disconnected from service " + name);
-            mBound = true;
-        }
-    }
-
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -265,17 +254,26 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
         return editPassword;
     }
 
-
     private Button getBtnLogIn() {
         if (btnLogIn == null)
             btnLogIn = (Button) findViewById(R.id.btn_login);
         return btnLogIn;
     }
 
-    private ProgressDialog getLoaderDialog() {
-        if (mLoaderDialog == null)
-            mLoaderDialog = new ProgressDialog(LogInActivity.this, "Logging in");
-        return mLoaderDialog;
-    }
+    private class WebSocketServiceConnection implements ServiceConnection {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder binder) {
+            DebugUtils.logDebug(TAG, "Successfully bounded to " + name.getClassName());
+            WebSocketService.WebSocketServiceBinder webSocketServiceBinder = (WebSocketService.WebSocketServiceBinder) binder;
+            webSocketService = webSocketServiceBinder.getService();
+            webSocketService.setWebSocketLister(LogInActivity.this);
+            mBound = true;
+        }
 
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            DebugUtils.logDebug(TAG, "Disconnected from service " + name);
+            mBound = true;
+        }
+    }
 }
