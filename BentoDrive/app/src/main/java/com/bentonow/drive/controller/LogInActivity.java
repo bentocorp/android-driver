@@ -119,15 +119,17 @@ public class LogInActivity extends MainActivity implements View.OnClickListener,
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (mLoaderDialog != null && !mBound)
+                if (mLoaderDialog != null)
                     mLoaderDialog.dismiss();
             }
         });
     }
 
     private void showDialog() {
-        if (mLoaderDialog == null || !mLoaderDialog.isShowing())
+        if (mLoaderDialog == null || !mLoaderDialog.isShowing()) {
             mLoaderDialog = new ProgressDialog(LogInActivity.this, "Logging in");
+            mLoaderDialog.show();
+        }
     }
 
     @Override

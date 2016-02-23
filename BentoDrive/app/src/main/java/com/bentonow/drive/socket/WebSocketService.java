@@ -217,7 +217,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
                 for (Object mObject : args) {
                     DebugUtils.logDebug(TAG, "EVENT_DISCONNECT: " + mObject.toString());
 
-                    if (mObject.toString().contains("disconnect"))
+                    if (mObject.toString().contains("disconnect") && SharedPreferencesUtil.getBooleanPreference(WebSocketService.this, SharedPreferencesUtil.IS_USER_LOG_IN))
                         mSocket.connect();
                 }
 
@@ -585,7 +585,7 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
         String sExceptionMessage = "Exception after: " + lSeconds + " seconds :: ";
 
-        if (lSeconds > 3) {
+        if (lSeconds > 3 && SharedPreferencesUtil.getBooleanPreference(WebSocketService.this, SharedPreferencesUtil.IS_USER_LOG_IN)) {
             if (mReconnecting) {
                 DebugUtils.logError(TAG, sExceptionMessage + "Reconnecting " + mReconnecting + " :: ");
             } else {
