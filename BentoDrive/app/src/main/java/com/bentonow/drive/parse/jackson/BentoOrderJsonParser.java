@@ -127,7 +127,8 @@ public class BentoOrderJsonParser extends MainParser {
                             }
                         }
                         mOrder.setItem(mOrder.getItem().replace("\\n", "\n"));
-                        mArrayBentoOrder.add(mOrder);
+                        if (!mOrder.getStatus().equals("COMPLETE"))
+                            mArrayBentoOrder.add(mOrder);
                     }
 
                 } else {

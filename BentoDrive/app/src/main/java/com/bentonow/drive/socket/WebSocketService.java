@@ -331,117 +331,117 @@ public class WebSocketService extends Service implements UpdateLocationListener 
 
                         boolean bRefresh = true;
                         int iOrderId = -1;
-
-                        switch (mOrder.getOrderType()) {
-                            case "ASSIGN":
-                                if (aListTask.isEmpty()) {
-                                    aListTask.add(mOrder);
-                                    BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.ASSIGN);
-                                } else if (mOrder.getAfter().isEmpty()) {
+                        if (!mOrder.getStatus().equals("COMPLETE"))
+                            switch (mOrder.getOrderType()) {
+                                case "ASSIGN":
                                     if (aListTask.isEmpty()) {
+                                        aListTask.add(mOrder);
+                                        BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.ASSIGN);
+                                    } else if (mOrder.getAfter().isEmpty()) {
+                                        if (aListTask.isEmpty()) {
+                                            BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.ASSIGN);
+                                        } else {
+                                            bRefresh = false;
+                                        }
+                                        aListTask.add(mOrder);
+                                    } else {
+                                        if (aListTask.get(0).getOrderId().equals(mOrder.getAfter())) {
+                                            aTempListOder.add(mOrder);
+                                            BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.SWITCHED);
+                                            aTempListOder.addAll(aListTask);
+                                        } else {
+                                            for (int a = 0; a < aListTask.size(); a++) {
+                                                if (aListTask.get(a).getOrderId().equals(mOrder.getAfter())) {
+                                                    aTempListOder.add(mOrder);
+                                                }
+                                                aTempListOder.add(aListTask.get(a));
+                                            }
+                                            bRefresh = false;
+                                        }
+                                        aListTask = (ArrayList<OrderItemModel>) aTempListOder.clone();
+                                    }
+
+                                    saveListTask(aListTask);
+
+                                    if (mSocketListener != null)
+                                        mSocketListener.onAssign(aListTask, bRefresh);
+                                    break;
+                                case "UNASSIGN":
+                                    for (int a = 0; a < aListTask.size(); a++)
+                                        if (aListTask.get(a).getOrderId().equals(mOrder.getOrderId())) {
+                                            iOrderId = a;
+                                            aListTask.remove(a);
+                                            break;
+                                        }
+
+                                    if (iOrderId == 0) {
+                                        if (aListTask.isEmpty())
+                                            BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.REMOVED);
+                                        else
+                                            BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.SWITCHED);
+                                    }
+
+                                    saveListTask(aListTask);
+
+                                    if (mSocketListener != null)
+                                        mSocketListener.onUnassign(aListTask, bRefresh);
+                                    break;
+                                case "REPRIORITIZE":
+                                    if (aListTask.isEmpty()) {
+                                        aListTask.add(mOrder);
                                         BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.ASSIGN);
                                     } else {
-                                        bRefresh = false;
-                                    }
-                                    aListTask.add(mOrder);
-                                } else {
-                                    if (aListTask.get(0).getOrderId().equals(mOrder.getAfter())) {
-                                        aTempListOder.add(mOrder);
-                                        BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.SWITCHED);
-                                        aTempListOder.addAll(aListTask);
-                                    } else {
+                                        String sOrderId = aListTask.get(0).getOrderId();
+
                                         for (int a = 0; a < aListTask.size(); a++) {
                                             if (aListTask.get(a).getOrderId().equals(mOrder.getAfter())) {
                                                 aTempListOder.add(mOrder);
                                             }
-                                            aTempListOder.add(aListTask.get(a));
+
+                                            if (!aListTask.get(a).getOrderId().equals(mOrder.getOrderId()))
+                                                aTempListOder.add(aListTask.get(a));
                                         }
-                                        bRefresh = false;
-                                    }
-                                    aListTask = (ArrayList<OrderItemModel>) aTempListOder.clone();
-                                }
 
-                                saveListTask(aListTask);
+                                        if (mOrder.getAfter().isEmpty())
+                                            aTempListOder.add(mOrder);
 
-                                if (mSocketListener != null)
-                                    mSocketListener.onAssign(aListTask, bRefresh);
-                                break;
-                            case "UNASSIGN":
-                                for (int a = 0; a < aListTask.size(); a++)
-                                    if (aListTask.get(a).getOrderId().equals(mOrder.getOrderId())) {
-                                        iOrderId = a;
-                                        aListTask.remove(a);
-                                        break;
+                                        aListTask = (ArrayList<OrderItemModel>) aTempListOder.clone();
+
+                                        if (!aListTask.get(0).getOrderId().equals(sOrderId))
+                                            BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.SWITCHED);
+
                                     }
 
-                                if (iOrderId == 0) {
-                                    if (aListTask.isEmpty())
-                                        BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.REMOVED);
-                                    else
-                                        BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.SWITCHED);
-                                }
+                                    saveListTask(aListTask);
 
-                                saveListTask(aListTask);
-
-                                if (mSocketListener != null)
-                                    mSocketListener.onUnassign(aListTask, bRefresh);
-                                break;
-                            case "REPRIORITIZE":
-                                if (aListTask.isEmpty()) {
-                                    aListTask.add(mOrder);
-                                    BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.ASSIGN);
-                                } else {
-                                    String sOrderId = aListTask.get(0).getOrderId();
+                                    if (mSocketListener != null)
+                                        mSocketListener.onReprioritize(aListTask, bRefresh);
+                                    break;
+                                case "MODIFY":
+                                    bRefresh = false;
 
                                     for (int a = 0; a < aListTask.size(); a++) {
-                                        if (aListTask.get(a).getOrderId().equals(mOrder.getAfter())) {
-                                            aTempListOder.add(mOrder);
+                                        if (mOrder.getOrderId().equals(aListTask.get(a).getOrderId())) {
+                                            aListTask.get(a).setPhone(mOrder.getPhone());
+                                            aListTask.get(a).setAddress(mOrder.getAddress());
+                                            aListTask.get(a).setStatus(mOrder.getStatus());
+                                            aListTask.get(a).setName(mOrder.getName());
+                                            aListTask.get(a).setItem(mOrder.getItem());
+                                            OrderItemDAO.update(aListTask.get(a));
+                                            bRefresh = a == 0;
+                                            break;
                                         }
-
-                                        if (!aListTask.get(a).getOrderId().equals(mOrder.getOrderId()))
-                                            aTempListOder.add(aListTask.get(a));
                                     }
 
-                                    if (mOrder.getAfter().isEmpty())
-                                        aTempListOder.add(mOrder);
-
-                                    aListTask = (ArrayList<OrderItemModel>) aTempListOder.clone();
-
-                                    if (!aListTask.get(0).getOrderId().equals(sOrderId))
-                                        BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.SWITCHED);
-
-                                }
-
-                                saveListTask(aListTask);
-
-                                if (mSocketListener != null)
-                                    mSocketListener.onReprioritize(aListTask, bRefresh);
-                                break;
-                            case "MODIFY":
-                                bRefresh = false;
-
-                                for (int a = 0; a < aListTask.size(); a++) {
-                                    if (mOrder.getOrderId().equals(aListTask.get(a).getOrderId())) {
-                                        aListTask.get(a).setPhone(mOrder.getPhone());
-                                        aListTask.get(a).setAddress(mOrder.getAddress());
-                                        aListTask.get(a).setStatus(mOrder.getStatus());
-                                        aListTask.get(a).setName(mOrder.getName());
-                                        aListTask.get(a).setItem(mOrder.getItem());
-                                        OrderItemDAO.update(aListTask.get(a));
-                                        bRefresh = a == 0;
-                                        break;
+                                    if (mSocketListener != null && bRefresh) {
+                                        BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.MODIFY);
+                                        mSocketListener.onModify();
                                     }
-                                }
-
-                                if (mSocketListener != null && bRefresh) {
-                                    BentoDriveUtil.showInAppNotification(WebSocketService.this, ConstantUtil.optTaskChanged.MODIFY);
-                                    mSocketListener.onModify();
-                                }
-                                break;
-                            default:
-                                DebugUtils.logDebug(TAG, "OrderType: Unhandled " + mOrder.getOrderType());
-                                break;
-                        }
+                                    break;
+                                default:
+                                    DebugUtils.logDebug(TAG, "OrderType: Unhandled " + mOrder.getOrderType());
+                                    break;
+                            }
 
                     } catch (Exception e) {
                         DebugUtils.logError(TAG, "Push: " + e.toString());
