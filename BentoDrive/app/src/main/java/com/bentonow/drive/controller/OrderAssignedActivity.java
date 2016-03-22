@@ -664,7 +664,7 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         if (webSocketService != null && !sOrderId.equals("")) {
             webSocketService.setWebSocketLister(OrderAssignedActivity.this);
             if (!webSocketService.getListTask().get(0).getOrderId().equals(sOrderId)) {
-                finish();   
+                finish();
             }
         }
 
