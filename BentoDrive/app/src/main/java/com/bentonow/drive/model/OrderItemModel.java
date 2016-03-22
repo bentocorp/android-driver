@@ -177,4 +177,5 @@ public class OrderItemModel extends SugarRecord implements Parcelable {
     public void setAddressId(long addressId) {
         this.addressId = addressId;
     }
+
 }

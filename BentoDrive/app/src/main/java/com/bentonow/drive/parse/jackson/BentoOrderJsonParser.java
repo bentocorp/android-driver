@@ -38,6 +38,7 @@ public class BentoOrderJsonParser extends MainParser {
                 } else if ("ret".equals(nameField)) {
                     while (jp.nextToken() != JsonToken.END_ARRAY) {
                         OrderItemModel mOrder = new OrderItemModel();
+                        String sNote = "";
                         mOrder.setOrderType("ASSIGN");
                         while (jp.nextToken() != JsonToken.END_OBJECT) {
                             nameField = jp.getCurrentName();
@@ -118,6 +119,8 @@ public class BentoOrderJsonParser extends MainParser {
                                 String sItem = jp.getText();
                                 if (sItem != null && !sItem.isEmpty())
                                     mOrder.setItem(sItem.replace(twoPoints, ": \\n"));
+                            } else if (TAG_NOTES.equals(nameField)) {
+                                sNote = jp.getText();
                             } else if (TAG_DRIVERID.equals(nameField)) {
                                 mOrder.setDriverId(jp.getText());
                             } else if (TAG_STATUS.equals(nameField)) {
@@ -126,7 +129,12 @@ public class BentoOrderJsonParser extends MainParser {
                                 tagNotFound();
                             }
                         }
-                        mOrder.setItem(mOrder.getItem().replace("\\n", "\n"));
+                        String sOrderText = "";
+                        if (!sNote.isEmpty())
+                            sOrderText += "NOTES:\n ====\n" + sNote + "\n ====\n\n";
+                        sOrderText += mOrder.getItem().replace("\\n", "\n");
+
+                        mOrder.setItem(sOrderText);
                         if (!mOrder.getStatus().equals("COMPLETE"))
                             mArrayBentoOrder.add(mOrder);
                     }
@@ -154,6 +162,7 @@ public class BentoOrderJsonParser extends MainParser {
         json = json.replace(": \\n", twoPoints);
 
         OrderItemModel mOrder = new OrderItemModel();
+        String sNote = "";
 
         startParsed();
 
@@ -249,6 +258,8 @@ public class BentoOrderJsonParser extends MainParser {
                                 String sItem = jp.getText();
                                 if (sItem != null && !sItem.isEmpty())
                                     mOrder.setItem(sItem.replace(twoPoints, ": \\n"));
+                            } else if (TAG_NOTES.equals(nameField)) {
+                                sNote = jp.getText();
                             } else if (TAG_DRIVERID.equals(nameField)) {
                                 mOrder.setDriverId(jp.getText());
                             } else if (TAG_STATUS.equals(nameField)) {
@@ -263,8 +274,11 @@ public class BentoOrderJsonParser extends MainParser {
                         tagNotFound();
                     }
                 }
-
-                mOrder.setItem(mOrder.getItem().replace("\\n", "\n"));
+                String sOrderText = "";
+                if (!sNote.isEmpty())
+                    sOrderText += "NOTES:\n ====\n" + sNote + "\n ====\n\n";
+                sOrderText += mOrder.getItem().replace("\\n", "\n");
+                mOrder.setItem(sOrderText);
 
             } else {
                 tagNotFound();

@@ -634,7 +634,8 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
                 updateUI();
                 DialogMaterial mAcceptDialog = new DialogMaterial(OrderAssignedActivity.this, null, getString(R.string.notification_modify_task));
                 mAcceptDialog.addAcceptButton("Roger that!");
-                mAcceptDialog.show();
+                if (!isFinishing())
+                    mAcceptDialog.show();
             }
         });
     }
@@ -661,8 +662,9 @@ public class OrderAssignedActivity extends MainActivity implements View.OnClickL
         super.onResume();
 
         if (webSocketService != null && !sOrderId.equals("")) {
+            webSocketService.setWebSocketLister(OrderAssignedActivity.this);
             if (!webSocketService.getListTask().get(0).getOrderId().equals(sOrderId)) {
-                finish();
+                finish();   
             }
         }
 

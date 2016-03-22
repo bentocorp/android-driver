@@ -43,7 +43,8 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
     public static final String TAG = "ListOrderAssignedActivity";
     //public static final int TAG_ID = 2;
-
+//https://www.amazon.es/Direccion-estrategica-Strategic-Management-Improvement/dp/6074522146?ie=UTF8&*Version*=1&*entries*=0
+    //https://books.google.com.mx/books?id=YJwwBMfr23wC&pg=PA4&lpg=PA4&dq=un+modelo+de+administracion+por+procesos+arturo+tovar+y+alejandro+mota&source=bl&ots=5UGkvhaZIq&sig=iYVMhhJGMwRKIWaIwV6umwLjPps&hl=es&sa=X&ved=0ahUKEwiV3bPt7LbLAhWJkIMKHei1DtQQ6AEIGjAA#v=onepage&q=un%20modelo%20de%20administracion%20por%20procesos%20arturo%20tovar%20y%20alejandro%20mota&f=false
     private ImageView imgMenuItemLogOut;
     private ImageView imgMenuItemRebound;
     private TextView txtEmptyView;
@@ -327,6 +328,7 @@ public class ListOrderAssignedActivity extends MainActivity implements View.OnCl
 
         if (webSocketService != null) {
             aListOder = webSocketService.getListTask();
+            webSocketService.setWebSocketLister(ListOrderAssignedActivity.this);
         }
 
         NotificationUtil.cancelAllNotification(ListOrderAssignedActivity.this);

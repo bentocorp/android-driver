@@ -36,6 +36,7 @@ public class MainParser {
     public static final String TAG_LABEL = "label";
     public static final String TAG_KEY = "key";
     public static final String TAG_ORDERSTRING = "orderString";
+    public static final String TAG_NOTES = "notes";
     public static final String TAG_DRIVERID = "driverId";
     public static final String TAG_STATUS = "status";
     public static final String TAG_AFTER = "after";

@@ -4,6 +4,7 @@ import android.os.Looper;
 
 import com.bentonow.drive.model.OrderItemModel;
 import com.bentonow.drive.util.ConstantUtil;
+import com.bentonow.drive.util.DebugUtils;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
@@ -91,7 +92,9 @@ public class BentoRestClient {
     }
 
     public static void getStatusOrder(ConstantUtil.optStatusOrder optStatusOrder, OrderItemModel mOrderModel, AsyncHttpResponseHandler responseHandler) {
-        getClient().get(BentoDriveAPI.getStatusOrderUrl(optStatusOrder, mOrderModel.getOrderId()), null, responseHandler);
+        String sUrl = BentoDriveAPI.getStatusOrderUrl(optStatusOrder, mOrderModel.getOrderId());
+        DebugUtils.logDebug(TAG, "URL:: " + sUrl);
+        getClient().get(sUrl, null, responseHandler);
     }
 
     public static void getMinVersion(AsyncHttpResponseHandler responseHandler) {

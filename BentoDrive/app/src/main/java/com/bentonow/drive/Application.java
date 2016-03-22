@@ -10,6 +10,8 @@ import android.os.Looper;
 
 import com.bentonow.drive.util.DebugUtils;
 import com.crashlytics.android.Crashlytics;
+import com.orm.SugarApp;
+
 import io.fabric.sdk.android.Fabric;
 
 
